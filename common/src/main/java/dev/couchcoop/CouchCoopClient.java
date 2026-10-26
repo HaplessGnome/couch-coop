@@ -30,6 +30,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowFocusable;
+
 /**
  * Per-instance splitscreen state, driven from mixin hooks: {@link #onFrame} once per rendered
  * frame (input) and {@link #onTick} once per client tick (session sync, layout, lifecycle).
@@ -72,6 +74,7 @@ public final class CouchCoopClient {
     private long padMissingSince;
     private String wantedPadKey = System.getProperty(CouchCoop.PROP_PAD);
     private int shownPlayerIndex = -1;
+    private Boolean focusable;
 
     private final Map<String, Long> startHeldSince = new HashMap<>();
     private final Set<String> startHandled = new HashSet<>();
@@ -538,6 +541,23 @@ public final class CouchCoopClient {
         }
     }
 
+    /**
+     * True when this window is played on a controller while another window in the session
+     * belongs to a keyboard-and-mouse player. The real mouse and keyboard are theirs, so this
+     * window ignores mouse clicks and can't be activated by a stray click in its half.
+     */
+    public boolean ignoresRealMouse() {
+        if (menuPad() == null) {
+            return false;
+        }
+        for (Peer peer : session.peers()) {
+            if (peer.slot() != session.slot() && !peer.child() && !peer.hasPad()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** The frame cap while the screen is split, or 0 for none. */
     public int splitFrameLimit() {
         int limit = CouchCoop.config().splitFrameLimit;
@@ -588,6 +608,12 @@ public final class CouchCoopClient {
         }
         CouchCoopConfig config = CouchCoop.config();
         layout.apply(minecraft.getWindow(), index, peers.size(), config.layout, config.coverTaskbar);
+        boolean shouldFocus = !ignoresRealMouse();
+        if (!Boolean.valueOf(shouldFocus).equals(focusable)) {
+            // A controller window that can't be activated never takes the keyboard from its player.
+            SDL_SetWindowFocusable(minecraft.getWindow().handle(), shouldFocus);
+            focusable = shouldFocus;
+        }
 
         if (pad != null && index != shownPlayerIndex && CouchCoop.config().controllerLights) {
             pad.showPlayer(Math.max(index, 0));

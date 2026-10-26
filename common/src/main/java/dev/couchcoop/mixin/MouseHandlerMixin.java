@@ -32,6 +32,23 @@ public abstract class MouseHandlerMixin {
         }
     }
 
+    /** The real mouse belongs to the keyboard-and-mouse player's window; ignore its clicks here. */
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
+    private void couchcoop$ignoreOthersClicks(CallbackInfo ci) {
+        CouchCoopClient client = CouchCoopClient.get();
+        if (client != null && client.ignoresRealMouse()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
+    private void couchcoop$ignoreOthersScroll(CallbackInfo ci) {
+        CouchCoopClient client = CouchCoopClient.get();
+        if (client != null && client.ignoresRealMouse()) {
+            ci.cancel();
+        }
+    }
+
     /** Screens read the mouse position for hover and tooltips; report the controller cursor. */
     @Inject(method = "getScaledXPos(Lcom/mojang/blaze3d/platform/Window;)D", at = @At("HEAD"), cancellable = true)
     private void couchcoop$cursorX(Window window, CallbackInfoReturnable<Double> cir) {
