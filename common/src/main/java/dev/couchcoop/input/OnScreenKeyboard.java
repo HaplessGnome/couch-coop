@@ -26,6 +26,7 @@ import static org.lwjgl.sdl.SDLGamepad.SDL_GAMEPAD_AXIS_LEFTY;
 public final class OnScreenKeyboard {
     // SDL keycodes Minecraft uses as KeyEvent#shortcutKey for these scancodes.
     private static final int SDLK_BACKSPACE = 0x08;
+    private static final int SDLK_TAB = 0x09;
     private static final int SDLK_RETURN = 0x0D;
     private static final int SDLK_RIGHT = 0x4000004F;
     private static final int SDLK_LEFT = 0x40000050;
@@ -110,6 +111,9 @@ public final class OnScreenKeyboard {
         if (pad.pressed(GamepadInput.R2)) {
             key(screen, InputConstants.KEY_RIGHT, SDLK_RIGHT);
         }
+        if (pad.pressed(GamepadInput.R3)) {
+            key(screen, InputConstants.KEY_TAB, SDLK_TAB);
+        }
         if (pad.pressed(GamepadInput.OPTIONS)) {
             key(screen, InputConstants.KEY_RETURN, SDLK_RETURN);
         }
@@ -126,7 +130,8 @@ public final class OnScreenKeyboard {
             pad.label(GamepadInput.CROSS) + " type   " + pad.label(GamepadInput.SQUARE) + " delete   "
                 + pad.label(GamepadInput.TRIANGLE) + " space   " + pad.label(GamepadInput.OPTIONS) + " enter",
             pad.label(GamepadInput.L1) + " shift   " + pad.label(GamepadInput.R1) + " symbols   "
-                + pad.label(GamepadInput.L2) + "/" + pad.label(GamepadInput.R2) + " move   " + pad.label(GamepadInput.CIRCLE) + " hide",
+                + pad.label(GamepadInput.L2) + "/" + pad.label(GamepadInput.R2) + " move   " + pad.label(GamepadInput.R3) + " tab   "
+                + pad.label(GamepadInput.CIRCLE) + " hide",
         };
     }
 
@@ -139,6 +144,7 @@ public final class OnScreenKeyboard {
             case SHIFT -> shift = !shift;
             case SYMBOLS -> toggleSymbols();
             case BACKSPACE -> key(screen, InputConstants.KEY_BACKSPACE, SDLK_BACKSPACE);
+            case TAB -> key(screen, InputConstants.KEY_TAB, SDLK_TAB);
             case DONE -> key(screen, InputConstants.KEY_RETURN, SDLK_RETURN);
         }
     }

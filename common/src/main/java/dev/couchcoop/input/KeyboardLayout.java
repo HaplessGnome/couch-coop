@@ -8,7 +8,7 @@ import java.util.List;
  * keys. Pure layout logic: {@link OnScreenKeyboard} turns key presses into game input.
  */
 public final class KeyboardLayout {
-    public enum Kind { CHAR, SHIFT, SYMBOLS, SPACE, BACKSPACE, DONE }
+    public enum Kind { CHAR, SHIFT, SYMBOLS, SPACE, BACKSPACE, TAB, DONE }
 
     /**
      * One key. {@code start} and {@code width} are in key units; every row is {@link #ROW_UNITS} wide.
@@ -75,7 +75,9 @@ public final class KeyboardLayout {
         rows.add(List.of(
             new Key(Kind.SYMBOLS, symbolPage ? "abc" : "#+=", "", "", 0, 2),
             new Key(Kind.CHAR, "/", "/", "/", 2, 1),
-            new Key(Kind.SPACE, "Space", " ", " ", 3, 5),
+            new Key(Kind.SPACE, "Space", " ", " ", 3, 4),
+            // Tab completes commands and player names in chat.
+            new Key(Kind.TAB, "Tab", "", "", 7, 1),
             new Key(Kind.DONE, "Done", "", "", 8, 2)
         ));
         return rows;

@@ -44,6 +44,11 @@ class KeyboardLayoutTest {
     }
 
     @Test
+    void bottomRowHasTabForAutocomplete() {
+        assertEquals(Kind.TAB, layout.key(layout.move(new Cursor(3, 7), Direction.DOWN, false), false).kind());
+    }
+
+    @Test
     void leftAndRightWrap() {
         assertEquals(new Cursor(0, 9), layout.move(new Cursor(0, 0), Direction.LEFT, false));
         assertEquals(new Cursor(0, 0), layout.move(new Cursor(0, 9), Direction.RIGHT, false));
