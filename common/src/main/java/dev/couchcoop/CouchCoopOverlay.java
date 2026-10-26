@@ -1,0 +1,103 @@
+package dev.couchcoop;
+
+import dev.couchcoop.input.VirtualCursor;
+import dev.couchcoop.profile.ProfilePicker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+
+import java.util.List;
+
+/**
+ * Draws on top of everything else in the GUI: status messages, the join hint and the
+ * controller's menu cursor.
+ */
+public final class CouchCoopOverlay {
+    private static final int TEXT = 0xFFFFFFFF;
+    private static final int BACKDROP = 0xA0000000;
+    private static final int MUTED = 0xFFB0B0B0;
+    private static final int PANEL = 0xD0101018;
+    private static final int HIGHLIGHT = 0xFF3050A0;
+    private static final int CURSOR_FILL = 0xFFFFFFFF;
+    private static final int CURSOR_OUTLINE = 0xFF000000;
+
+    private CouchCoopOverlay() {
+    }
+
+    public static void draw(GuiGraphicsExtractor graphics) {
+        CouchCoopClient client = CouchCoopClient.get();
+        if (client == null) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        Font font = minecraft.font;
+
+        int y = 4;
+        String message = client.message();
+        if (message != null) {
+            banner(graphics, font, message, y);
+            y += font.lineHeight + 6;
+        }
+        String hint = client.hint(minecraft);
+        if (hint != null && client.picker() == null) {
+            banner(graphics, font, hint, y);
+        }
+        if (client.picker() != null) {
+            picker(graphics, font, client.picker());
+        }
+
+        if (CouchCoopClient.isCursorActive()) {
+            VirtualCursor cursor = client.input().cursor();
+            cursor(graphics, (int) cursor.x(), (int) cursor.y());
+        }
+    }
+
+    private static void banner(GuiGraphicsExtractor graphics, Font font, String text, int y) {
+        int width = font.width(text);
+        int x = (graphics.guiWidth() - width) / 2;
+        graphics.fill(x - 4, y - 2, x + width + 4, y + font.lineHeight + 2, BACKDROP);
+        graphics.text(font, text, x, y, TEXT);
+    }
+
+    /** The joining player's profile list, centred, with the highlighted row marked. */
+    private static void picker(GuiGraphicsExtractor graphics, Font font, ProfilePicker picker) {
+        String title = "Who's playing?";
+        String help = picker.help();
+        List<ProfilePicker.Entry> entries = picker.entries();
+        int row = font.lineHeight + 4;
+        int width = Math.max(font.width(title), font.width(help));
+        for (ProfilePicker.Entry entry : entries) {
+            width = Math.max(width, font.width(entry.label()) + 16);
+        }
+        width += 16;
+        int height = row * (entries.size() + 2) + 12;
+        int left = (graphics.guiWidth() - width) / 2;
+        int top = (graphics.guiHeight() - height) / 2;
+        graphics.fill(left, top, left + width, top + height, PANEL);
+
+        int y = top + 6;
+        graphics.text(font, title, (graphics.guiWidth() - font.width(title)) / 2, y, TEXT);
+        y += row + 2;
+        for (int i = 0; i < entries.size(); i++) {
+            boolean selected = i == picker.selectedIndex();
+            if (selected) {
+                graphics.fill(left + 4, y - 2, left + width - 4, y + font.lineHeight + 1, HIGHLIGHT);
+            }
+            graphics.text(font, entries.get(i).label(), left + 12, y, selected ? TEXT : MUTED);
+            y += row;
+        }
+        graphics.text(font, help, (graphics.guiWidth() - font.width(help)) / 2, y + 2, MUTED);
+    }
+
+    /** A small arrow pointer, outline first so it reads on any background. */
+    private static void cursor(GuiGraphicsExtractor graphics, int x, int y) {
+        for (int row = 0; row < 10; row++) {
+            int span = row < 7 ? row + 1 : 9 - row;
+            graphics.fill(x - 1, y + row - 1, x + span + 1, y + row + 2, CURSOR_OUTLINE);
+        }
+        for (int row = 0; row < 10; row++) {
+            int span = row < 7 ? row + 1 : 9 - row;
+            graphics.fill(x, y + row, x + span, y + row + 1, CURSOR_FILL);
+        }
+    }
+}

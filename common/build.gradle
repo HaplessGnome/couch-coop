@@ -1,0 +1,18 @@
+plugins {
+    id 'net.fabricmc.fabric-loom'
+}
+
+// Only here so IDEs (and a standalone compile) see Minecraft on common/'s classpath. The loader
+// projects compile these sources themselves; this project's own jar is never shipped.
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    // For Mixin, and for the @Environment annotations Loom's Minecraft jar carries. Keep
+    // net.fabricmc.* imports out of common/: Forge compiles this code too.
+    compileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
+}
+
+loom {
+    runConfigs.configureEach {
+        ideConfigGenerated = false
+    }
+}

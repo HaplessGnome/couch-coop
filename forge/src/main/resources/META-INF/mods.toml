@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[${forge_major},)"
+license="MIT"
+clientSideOnly=true
+
+[[mods]]
+modId="${mod_id}"
+version="${version}"
+displayName="${mod_name}"
+authors="${mod_author}"
+description='''${mod_description}'''
+
+[[dependencies.${mod_id}]]
+    modId="forge"
+    mandatory=true
+    versionRange="[${forge_major},)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[${minecraft_version},26.4)"
+    ordering="NONE"
+    side="CLIENT"

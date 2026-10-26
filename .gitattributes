@@ -1,0 +1,5 @@
+# Shell scripts must keep LF and batch files CRLF, whatever core.autocrlf says
+* text=auto
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
