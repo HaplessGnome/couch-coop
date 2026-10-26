@@ -61,7 +61,7 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 ¹ Consoles open crafting here; Java's inventory already contains the crafting grid.
 ² Consoles emote here; Java has no emotes.
 
-R3, the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, `splitFrameLimit` (FPS cap per window while split, default 60), guest audio, `quickCraft`, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
+R3, the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, `splitFrameLimit` (FPS cap per window while split, default 60), `guestMemoryMb` (memory per guest window, default 3072), guest audio, `quickCraft`, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
 
 ### On-screen keyboard
 
@@ -89,7 +89,8 @@ Controllers rumble when you take damage (harder for bigger hits) and tick when y
 
 - **Launcher compatibility for auto-launch:** the mod restarts the game using the current process's own command line. That works with the official launcher, Modrinth App, CurseForge and ATLauncher. **Prism Launcher and MultiMC** hide the command line. Fabric still works there through a fallback, but on Forge under Prism you must start the extra windows yourself. Windows started by hand join the session and get tiled anyway; give each one a controller by pressing Cross.
 - **Multiplayer servers:** guests use offline profiles, so joining a remote server only works if that server runs in offline mode. Singleplayer/LAN worlds always work.
-- **Performance:** every player runs a full copy of the game, so 3–4 players needs plenty of RAM and a decent GPU.
+- **Performance:** every player runs a full copy of the game, so 3–4 players needs plenty of RAM and a decent GPU. Guest windows are capped at `guestMemoryMb` (3 GB by default) rather than copying window 1's memory setting.
+- **One keyboard and mouse:** one player can use keyboard and mouse (window 1) while the others use controllers. Controller windows then ignore the mouse and can't take the keyboard, so a stray click doesn't pull the keyboard player out of their window.
 - **Controlify** reads controllers too, so Fabric refuses to start with both installed. pcal's *Splitscreen Support* also moves windows around and is flagged as a conflict.
 
 ## Credits
