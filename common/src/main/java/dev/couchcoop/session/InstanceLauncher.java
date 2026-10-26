@@ -67,9 +67,17 @@ public final class InstanceLauncher {
             return Result.failed("This launcher hides the game's command line. Start another instance manually.");
         }
 
+        Path logConfig = workDir.resolve("guest-log4j2.xml");
+        try {
+            Files.writeString(logConfig, GUEST_LOG_CONFIG, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            CouchCoop.LOGGER.warn("Could not write the guest log config; the guest may share the host's log", e);
+            logConfig = null;
+        }
+
         List<String> command = new ArrayList<>();
         command.add(javaExecutable());
-        command.addAll(jvmArguments());
+        command.addAll(guestJvmArguments(jvmArguments(), CouchCoop.config().guestMemoryMb, logConfig));
         command.add("-D" + CouchCoop.PROP_CHILD + "=true");
         command.add("-D" + CouchCoop.PROP_PAD + "=" + padKey);
         if (profileName != null) {
@@ -203,6 +211,85 @@ public final class InstanceLauncher {
      * The JVM reports module options as {@code jdk.module.*} system properties; turn them back
      * into real flags. Debugger agents are dropped because their port is already in use.
      */
+    /**
+     * Logs only to standard output, which the launcher redirects into launch-NAME.log. Without
+     * this a guest uses the host's log setup and rotates the instance's logs/latest.log while
+     * the host is still writing to it.
+     */
+    private static final String GUEST_LOG_CONFIG = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Configuration status="WARN">
+          <Appenders>
+            <Console name="SysOut" target="SYSTEM_OUT">
+              <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level] (%logger{1}) %msg{nolookups}%n"/>
+            </Console>
+          </Appenders>
+          <Loggers>
+            <Root level="info">
+              <AppenderRef ref="SysOut"/>
+            </Root>
+          </Loggers>
+        </Configuration>
+        """;
+
+    /**
+     * Adapts the host's JVM flags for a guest: caps the heap at {@code guestMemoryMb} (0 keeps
+     * the host's), since launchers often give the game 6 GB or more and every guest copied it,
+     * and points logging at the guest's own config.
+     */
+    static List<String> guestJvmArguments(List<String> host, long guestMemoryMb, Path logConfig) {
+        long hostMax = -1;
+        for (String arg : host) {
+            if (arg.startsWith("-Xmx")) {
+                hostMax = parseMegabytes(arg.substring(4));
+            }
+        }
+        long max = guestMemoryMb <= 0 ? hostMax : hostMax > 0 ? Math.min(hostMax, guestMemoryMb) : guestMemoryMb;
+
+        List<String> out = new ArrayList<>();
+        for (String arg : host) {
+            if (arg.startsWith("-Xmx") && max > 0) {
+                continue;
+            }
+            if (arg.startsWith("-Xms") && max > 0 && parseMegabytes(arg.substring(4)) > max) {
+                out.add("-Xms" + max + "M");
+                continue;
+            }
+            if (logConfig != null && (arg.startsWith("-Dlog4j.configurationFile=") || arg.startsWith("-Dlog4j2.configurationFile="))) {
+                continue;
+            }
+            out.add(arg);
+        }
+        if (max > 0) {
+            out.add("-Xmx" + max + "M");
+        }
+        if (logConfig != null) {
+            out.add("-Dlog4j.configurationFile=" + logConfig.toAbsolutePath());
+        }
+        return out;
+    }
+
+    /** A JVM memory size such as 6144M, 6G or 512k, in megabytes; -1 if unreadable. */
+    static long parseMegabytes(String size) {
+        if (size.isEmpty()) {
+            return -1;
+        }
+        char unit = Character.toLowerCase(size.charAt(size.length() - 1));
+        String digits = Character.isDigit(unit) ? size : size.substring(0, size.length() - 1);
+        try {
+            long value = Long.parseLong(digits);
+            return switch (unit) {
+                case 'k' -> value / 1024;
+                case 'm' -> value;
+                case 'g' -> value * 1024;
+                case 't' -> value * 1024 * 1024;
+                default -> value / (1024 * 1024);
+            };
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
     private static List<String> jvmArguments() {
         boolean wrapped = startedByWrapper();
         List<String> out = new ArrayList<>();

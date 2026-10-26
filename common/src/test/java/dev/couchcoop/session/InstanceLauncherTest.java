@@ -2,6 +2,7 @@ package dev.couchcoop.session;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,5 +45,39 @@ class InstanceLauncherTest {
         assertTrue(InstanceLauncher.isWrapperJvmArg("-javaagent:C:/Temp/.tmpdUlcje/theseus.jar"));
         assertFalse(InstanceLauncher.isWrapperJvmArg("-Xmx6144M"));
         assertFalse(InstanceLauncher.isWrapperJvmArg("-Dminecraft.launcher.brand=theseus"));
+    }
+
+    @Test
+    void guestHeapIsCappedAndTheLogConfigReplaced() {
+        Path config = Path.of("session", "guest-log4j2.xml");
+        List<String> guest = InstanceLauncher.guestJvmArguments(
+            List.of("-Xms8G", "-Xmx6144M", "-Dlog4j.configurationFile=client.xml", "-XX:+UseG1GC"), 3072, config);
+        assertEquals(List.of(
+            "-Xms3072M", "-XX:+UseG1GC", "-Xmx3072M", "-Dlog4j.configurationFile=" + config.toAbsolutePath()
+        ), guest);
+    }
+
+    @Test
+    void guestNeverGetsMoreThanTheHost() {
+        assertEquals(List.of("-Xmx2048M"), InstanceLauncher.guestJvmArguments(List.of("-Xmx2G"), 3072, null));
+    }
+
+    @Test
+    void zeroKeepsTheHostsHeap() {
+        assertEquals(List.of("-Xmx6144M"), InstanceLauncher.guestJvmArguments(List.of("-Xmx6G"), 0, null));
+    }
+
+    @Test
+    void hostWithoutAHeapFlagStillGetsACap() {
+        assertEquals(List.of("-Xmx3072M"), InstanceLauncher.guestJvmArguments(List.of(), 3072, null));
+    }
+
+    @Test
+    void memorySizesParse() {
+        assertEquals(6144, InstanceLauncher.parseMegabytes("6G"));
+        assertEquals(6144, InstanceLauncher.parseMegabytes("6144m"));
+        assertEquals(512, InstanceLauncher.parseMegabytes("524288k"));
+        assertEquals(1, InstanceLauncher.parseMegabytes("1048576"));
+        assertEquals(-1, InstanceLauncher.parseMegabytes("lots"));
     }
 }
