@@ -160,7 +160,7 @@ public final class VirtualCursor {
             case LEFT -> key(current, InputConstants.KEY_LEFT, SDLK_LEFT);
             case RIGHT -> key(current, InputConstants.KEY_RIGHT, SDLK_RIGHT);
         }
-        GuiEventListener focused = focusedLeaf(current);
+        GuiEventListener focused = OnScreenKeyboard.focusedLeaf(current);
         if (focused != null) {
             ScreenRectangle area = focused.getRectangle();
             if (area.width() > 0 && area.height() > 0) {
@@ -194,14 +194,6 @@ public final class VirtualCursor {
                 addWidgets(nested, targets);
             }
         }
-    }
-
-    private static GuiEventListener focusedLeaf(ContainerEventHandler parent) {
-        GuiEventListener focused = parent.getFocused();
-        while (focused instanceof ContainerEventHandler nested && nested.getFocused() != null) {
-            focused = nested.getFocused();
-        }
-        return focused;
     }
 
     private void moveTo(Screen current, double newX, double newY) {

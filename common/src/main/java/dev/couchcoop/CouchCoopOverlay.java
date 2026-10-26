@@ -1,5 +1,8 @@
 package dev.couchcoop;
 
+import dev.couchcoop.input.Gamepad;
+import dev.couchcoop.input.KeyboardLayout;
+import dev.couchcoop.input.OnScreenKeyboard;
 import dev.couchcoop.input.VirtualCursor;
 import dev.couchcoop.profile.ProfilePicker;
 import net.minecraft.client.Minecraft;
@@ -9,8 +12,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import java.util.List;
 
 /**
- * Draws on top of everything else in the GUI: status messages, the join hint and the
- * controller's menu cursor.
+ * Draws on top of everything else in the GUI: status messages, the join hint, the profile
+ * picker, the on-screen keyboard and the controller's menu cursor.
  */
 public final class CouchCoopOverlay {
     private static final int TEXT = 0xFFFFFFFF;
@@ -18,6 +21,7 @@ public final class CouchCoopOverlay {
     private static final int MUTED = 0xFFB0B0B0;
     private static final int PANEL = 0xD0101018;
     private static final int HIGHLIGHT = 0xFF3050A0;
+    private static final int KEY = 0xFF303040;
     private static final int CURSOR_FILL = 0xFFFFFFFF;
     private static final int CURSOR_OUTLINE = 0xFF000000;
 
@@ -46,7 +50,9 @@ public final class CouchCoopOverlay {
             picker(graphics, font, client.picker());
         }
 
-        if (CouchCoopClient.isCursorActive()) {
+        if (CouchCoopClient.isKeyboardActive()) {
+            keyboard(graphics, font, client.input().keyboard(), client.pad());
+        } else if (CouchCoopClient.isCursorActive()) {
             VirtualCursor cursor = client.input().cursor();
             cursor(graphics, (int) cursor.x(), (int) cursor.y());
         }
@@ -87,6 +93,38 @@ public final class CouchCoopOverlay {
             y += row;
         }
         graphics.text(font, help, (graphics.guiWidth() - font.width(help)) / 2, y + 2, MUTED);
+    }
+
+    /** The on-screen keyboard, at the bottom of the screen or the top if the text box is low down. */
+    private static void keyboard(GuiGraphicsExtractor graphics, Font font, OnScreenKeyboard keyboard, Gamepad pad) {
+        List<List<KeyboardLayout.Key>> rows = keyboard.rows();
+        String[] help = keyboard.help(pad);
+        int unit = Math.min(26, (graphics.guiWidth() - 16) / KeyboardLayout.ROW_UNITS);
+        int keyHeight = font.lineHeight + 5;
+        int width = unit * KeyboardLayout.ROW_UNITS;
+        int height = rows.size() * (keyHeight + 2) + help.length * (font.lineHeight + 1) + 8;
+        int left = (graphics.guiWidth() - width) / 2;
+        int top = keyboard.atTop() ? 4 : graphics.guiHeight() - height - 4;
+        graphics.fill(left - 4, top - 4, left + width + 4, top + height, PANEL);
+
+        int y = top;
+        for (int r = 0; r < rows.size(); r++) {
+            for (int c = 0; c < rows.get(r).size(); c++) {
+                KeyboardLayout.Key key = rows.get(r).get(c);
+                int x = left + key.start() * unit;
+                boolean selected = keyboard.cursor().row() == r && keyboard.cursor().column() == c;
+                boolean lit = selected || (key.kind() == KeyboardLayout.Kind.SHIFT && keyboard.shift());
+                graphics.fill(x + 1, y, x + key.width() * unit - 1, y + keyHeight, selected ? HIGHLIGHT : lit ? 0xFF305030 : KEY);
+                String label = key.kind() == KeyboardLayout.Kind.CHAR && keyboard.shift() ? key.shifted() : key.label();
+                graphics.text(font, label, x + (key.width() * unit - font.width(label)) / 2, y + 3, TEXT);
+            }
+            y += keyHeight + 2;
+        }
+        y += 2;
+        for (String line : help) {
+            graphics.text(font, line, (graphics.guiWidth() - font.width(line)) / 2, y, MUTED);
+            y += font.lineHeight + 1;
+        }
     }
 
     /** A small arrow pointer, outline first so it reads on any background. */

@@ -98,6 +98,16 @@ public final class CouchCoopClient {
         return input;
     }
 
+    /** This window's controller, or null when it is played on keyboard and mouse. */
+    public Gamepad pad() {
+        return pad;
+    }
+
+    /** The on-screen keyboard is up in this window's open screen. */
+    public static boolean isKeyboardActive() {
+        return isControllerDriven() && instance.input.keyboard().isVisible() && Minecraft.getInstance().gui.screen() != null;
+    }
+
     public Vec2 movement() {
         return pad == null ? Vec2.ZERO : input.movement();
     }

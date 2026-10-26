@@ -8,6 +8,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.phys.Vec2;
@@ -30,12 +31,17 @@ public final class ControllerInput {
     private static final double TURN_SCALE = 0.15;
 
     private final VirtualCursor cursor = new VirtualCursor();
+    private final OnScreenKeyboard keyboard = new OnScreenKeyboard();
     private final List<Binding> bindings = new ArrayList<>();
     private boolean bindingsBuilt;
     private Vec2 movement = Vec2.ZERO;
 
     public VirtualCursor cursor() {
         return cursor;
+    }
+
+    public OnScreenKeyboard keyboard() {
+        return keyboard;
     }
 
     /** Left stick movement for {@link dev.couchcoop.mixin.KeyboardInputMixin}, or zero. */
@@ -59,7 +65,12 @@ public final class ControllerInput {
         if (minecraft.gui.screen() != null) {
             releaseAll();
             movement = Vec2.ZERO;
-            cursor.frame(minecraft, minecraft.gui.screen(), pad, deltaSeconds);
+            Screen screen = minecraft.gui.screen();
+            if (keyboard.update(screen, pad)) {
+                keyboard.frame(screen, pad);
+            } else {
+                cursor.frame(minecraft, screen, pad, deltaSeconds);
+            }
             return;
         }
         cursor.leaveScreen();
