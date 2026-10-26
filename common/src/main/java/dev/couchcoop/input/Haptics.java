@@ -11,11 +11,13 @@ import net.minecraft.world.item.TridentItem;
 
 /**
  * Controller feedback from gameplay: rumble when the player is hurt or breaks a block, and on a
- * DualSense, adaptive triggers. L2 (use) stiffens as a bow, crossbow or trident is drawn; R2
- * (attack) resists while the attack is recharging. Xbox pads get a light impulse-trigger buzz
- * while drawing instead.
+ * DualSense, L2 (use) stiffens as a bow, crossbow or trident is drawn. R2 is always left free.
+ * Xbox pads get a light impulse-trigger buzz while drawing instead.
  */
 public final class Haptics {
+    /** L2 resistance as a bow is drawn: from this at the start of the pull to this plus the range at full draw. */
+    private static final double BOW_START = 0.105;
+    private static final double BOW_RANGE = 0.525;
     /** Ticks a trident needs before it can be thrown. */
     private static final int TRIDENT_CHARGE_TICKS = 10;
 
@@ -40,10 +42,8 @@ public final class Haptics {
 
         double draw = drawProgress(player);
         if (config.adaptiveTriggers && pad.hasAdaptiveTriggers()) {
-            TriggerEffect left = draw >= 0 ? TriggerEffect.resistance(0, 0.15 + 0.75 * draw) : TriggerEffect.off();
-            double attack = config.attackTriggerStrength;
-            TriggerEffect right = attack > 0 && player.getAttackStrengthScale(0) < 0.95f ? TriggerEffect.resistance(0.1, attack) : TriggerEffect.off();
-            pad.setTriggers(left, right);
+            TriggerEffect left = draw >= 0 ? TriggerEffect.resistance(0, BOW_START + BOW_RANGE * draw) : TriggerEffect.off();
+            pad.setTriggers(left, TriggerEffect.off());
         } else if (config.rumble && draw >= 0 && !pad.hasAdaptiveTriggers()) {
             pad.rumbleTriggers((float) (0.1 + 0.3 * draw) * (float) config.rumbleStrength, 0, 80);
         }
