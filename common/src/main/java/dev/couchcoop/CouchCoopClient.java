@@ -77,6 +77,12 @@ public final class CouchCoopClient {
     private final Map<String, String> pendingNames = new HashMap<>();
     private final Set<String> knownFreePads = new HashSet<>();
     private ProfilePicker picker;
+    /**
+     * Pads whose current button press belonged to the profile list or form. That same press must
+     * not also count as a join gesture (Cross choosing a profile would otherwise claim the pad for
+     * this window), so they are ignored until all their buttons are released.
+     */
+    private final Set<String> usedPresses = new HashSet<>();
     private boolean hintPlayStation;
 
     private long lastFrameNanos = System.nanoTime();
@@ -237,10 +243,19 @@ public final class CouchCoopClient {
         for (Gamepad candidate : gamepads.pads()) {
             String key = candidate.key();
             if (key.equals(session.padKey()) || (picker != null && picker.pad() == candidate) || candidate == formPad) {
+                usedPresses.add(key);
                 continue;
             }
+            if (usedPresses.contains(key)) {
+                if (candidate.isActive()) {
+                    continue;
+                }
+                usedPresses.remove(key);
+            }
 
-            if (candidate.pressed(GamepadInput.CROSS) && session.padKey() == null && mayClaimWithA() && session.tryClaimPad(key)) {
+            // A pad whose guest window is still starting belongs to that window, not this one.
+            if (candidate.pressed(GamepadInput.CROSS) && session.padKey() == null && mayClaimWithA()
+                && !pendingSpawns.containsKey(key) && session.tryClaimPad(key)) {
                 onPadClaimed();
                 return;
             }
@@ -363,7 +378,11 @@ public final class CouchCoopClient {
             return;
         }
         ProfilePicker.Entry entry = picker.selected();
-        switch (picker.update()) {
+        ProfilePicker.Result result = picker.update();
+        if (result != ProfilePicker.Result.NONE) {
+            usedPresses.add(candidate.key());
+        }
+        switch (result) {
             case CANCEL -> picker = null;
             case CHOOSE -> {
                 picker = null;
