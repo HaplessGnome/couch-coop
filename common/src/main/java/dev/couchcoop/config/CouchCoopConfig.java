@@ -84,6 +84,7 @@ public final class CouchCoopConfig {
     public boolean invertLookY = false;
     public boolean childInstanceAudio = false;
     public boolean controllerLights = true;
+    public boolean quickCraft = true;
     public final Map<Action, GamepadInput> bindings = new EnumMap<>(Action.class);
 
     private CouchCoopConfig() {
@@ -135,6 +136,7 @@ public final class CouchCoopConfig {
         config.invertLookY = Boolean.parseBoolean(props.getProperty("invertLookY", Boolean.toString(config.invertLookY)));
         config.childInstanceAudio = Boolean.parseBoolean(props.getProperty("childInstanceAudio", Boolean.toString(config.childInstanceAudio)));
         config.controllerLights = Boolean.parseBoolean(props.getProperty("controllerLights", Boolean.toString(config.controllerLights)));
+        config.quickCraft = Boolean.parseBoolean(props.getProperty("quickCraft", Boolean.toString(config.quickCraft)));
         for (Action action : Action.values()) {
             config.bindings.put(action, GamepadInput.parse(props.getProperty(action.key()), action.defaultInput));
         }
@@ -148,6 +150,7 @@ public final class CouchCoopConfig {
             # Couch Co-op config
             # layout: TOP_BOTTOM or SIDE_BY_SIDE (how two players share the screen)
             # coverTaskbar: true tiles over the whole monitor like one fullscreen game; false leaves the taskbar visible
+            # quickCraft: list craftable items beside the inventory and crafting table (L1/R1 pick, R2 craft, L2 craft all)
             # bind.*: CROSS CIRCLE SQUARE TRIANGLE L1 R1 L2 R2 L3 R3 CREATE OPTIONS PS TOUCHPAD MUTE
             #         DPAD_UP DPAD_DOWN DPAD_LEFT DPAD_RIGHT NONE
             # Xbox pads use the button in the same place: CROSS=A CIRCLE=B SQUARE=X TRIANGLE=Y L1=LB R1=RB
@@ -164,6 +167,7 @@ public final class CouchCoopConfig {
         line(out, "invertLookY", invertLookY);
         line(out, "childInstanceAudio", childInstanceAudio);
         line(out, "controllerLights", controllerLights);
+        line(out, "quickCraft", quickCraft);
         for (Action action : Action.values()) {
             line(out, action.key(), bindings.get(action).name());
         }

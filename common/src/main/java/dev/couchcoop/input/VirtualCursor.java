@@ -2,8 +2,10 @@ package dev.couchcoop.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.couchcoop.CouchCoop;
+import dev.couchcoop.CouchCoopClient;
 import dev.couchcoop.config.CouchCoopConfig;
 import dev.couchcoop.config.CouchCoopConfig.Action;
+import dev.couchcoop.craft.QuickCraft;
 import dev.couchcoop.mixin.AbstractContainerScreenAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -181,6 +183,14 @@ public final class VirtualCursor {
             }
         }
         addWidgets(container, targets);
+        CouchCoopClient client = CouchCoopClient.get();
+        if (client != null && client.quickCraft().isActive()) {
+            QuickCraft.Layout panel = client.quickCraft().layout();
+            int shown = Math.min(panel.rows(), client.quickCraft().entries().size());
+            for (int i = 0; i < shown; i++) {
+                targets.add(new Navigation.Target(panel.left(), panel.top() + panel.firstRow() + i * panel.rowHeight(), panel.width(), panel.rowHeight()));
+            }
+        }
         return targets;
     }
 
