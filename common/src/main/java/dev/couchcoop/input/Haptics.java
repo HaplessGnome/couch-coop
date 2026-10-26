@@ -41,7 +41,8 @@ public final class Haptics {
         double draw = drawProgress(player);
         if (config.adaptiveTriggers && pad.hasAdaptiveTriggers()) {
             TriggerEffect left = draw >= 0 ? TriggerEffect.resistance(0, 0.15 + 0.75 * draw) : TriggerEffect.off();
-            TriggerEffect right = player.getAttackStrengthScale(0) < 0.95f ? TriggerEffect.resistance(0.1, 0.35) : TriggerEffect.off();
+            double attack = config.attackTriggerStrength;
+            TriggerEffect right = attack > 0 && player.getAttackStrengthScale(0) < 0.95f ? TriggerEffect.resistance(0.1, attack) : TriggerEffect.off();
             pad.setTriggers(left, right);
         } else if (config.rumble && draw >= 0 && !pad.hasAdaptiveTriggers()) {
             pad.rumbleTriggers((float) (0.1 + 0.3 * draw) * (float) config.rumbleStrength, 0, 80);

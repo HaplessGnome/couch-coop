@@ -89,6 +89,8 @@ public final class CouchCoopConfig {
     public boolean rumble = true;
     public double rumbleStrength = 1.0;
     public boolean adaptiveTriggers = true;
+    /** How hard R2 resists while the attack recharges, 0-1. Kept light: strong resistance gets tiring. */
+    public double attackTriggerStrength = 0.035;
     public final Map<Action, GamepadInput> bindings = new EnumMap<>(Action.class);
 
     private CouchCoopConfig() {
@@ -145,6 +147,7 @@ public final class CouchCoopConfig {
         config.rumble = Boolean.parseBoolean(props.getProperty("rumble", Boolean.toString(config.rumble)));
         config.rumbleStrength = Math.clamp(parseDouble(props.getProperty("rumbleStrength"), config.rumbleStrength), 0.0, 1.0);
         config.adaptiveTriggers = Boolean.parseBoolean(props.getProperty("adaptiveTriggers", Boolean.toString(config.adaptiveTriggers)));
+        config.attackTriggerStrength = Math.clamp(parseDouble(props.getProperty("attackTriggerStrength"), config.attackTriggerStrength), 0.0, 1.0);
         for (Action action : Action.values()) {
             config.bindings.put(action, GamepadInput.parse(props.getProperty(action.key()), action.defaultInput));
         }
@@ -162,6 +165,7 @@ public final class CouchCoopConfig {
             # quickCraft: list craftable items beside the inventory and crafting table (L1/R1 pick, R2 craft, L2 craft all)
             # rumble: vibrate when hurt or breaking blocks (rumbleStrength 0-1)
             # adaptiveTriggers: DualSense L2 stiffens while drawing a bow, R2 resists while the attack recharges
+            # attackTriggerStrength: how hard R2 resists, 0-1 (0 = off)
             # bind.*: CROSS CIRCLE SQUARE TRIANGLE L1 R1 L2 R2 L3 R3 CREATE OPTIONS PS TOUCHPAD MUTE
             #         DPAD_UP DPAD_DOWN DPAD_LEFT DPAD_RIGHT NONE
             # Xbox pads use the button in the same place: CROSS=A CIRCLE=B SQUARE=X TRIANGLE=Y L1=LB R1=RB
@@ -183,6 +187,7 @@ public final class CouchCoopConfig {
         line(out, "rumble", rumble);
         line(out, "rumbleStrength", rumbleStrength);
         line(out, "adaptiveTriggers", adaptiveTriggers);
+        line(out, "attackTriggerStrength", attackTriggerStrength);
         for (Action action : Action.values()) {
             line(out, action.key(), bindings.get(action).name());
         }

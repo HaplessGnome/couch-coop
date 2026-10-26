@@ -83,7 +83,7 @@ Beside the inventory and the crafting table, a list shows everything you can cra
 
 ### Rumble and adaptive triggers
 
-Controllers rumble when you take damage (harder for bigger hits) and tick when you break a block. On a DualSense, L2 tightens as you draw a bow, crossbow or trident, and R2 resists while your attack recharges. Xbox pads get a light trigger buzz while drawing instead.
+Controllers rumble when you take damage (harder for bigger hits) and tick when you break a block. On a DualSense, L2 tightens as you draw a bow, crossbow or trident, and R2 resists slightly while your attack recharges (`attackTriggerStrength`, 0 turns it off). Xbox pads get a light trigger buzz while drawing instead.
 
 ## Limitations
 
