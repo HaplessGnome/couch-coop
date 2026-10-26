@@ -47,7 +47,7 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 | Swap hands | Square ¹ | Shift-click (quick move) | Square |
 | Inventory | Triangle | Right-click (split stack) | Triangle |
 | Attack / mine | R2 | Scroll | Right stick |
-| Use / place | L2 | Focus navigation | D-pad |
+| Use / place | L2 | Jump between slots and buttons | D-pad |
 | Hotbar left / right | L1 / R1 | | |
 | Sprint | L3 | | |
 | Change camera | D-pad up | | |
@@ -61,13 +61,34 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 ¹ Consoles open crafting here; Java's inventory already contains the crafting grid.
 ² Consoles emote here; Java has no emotes.
 
-R3, the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar` and guest audio are in `config/couchcoop.properties`.
+R3, the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, guest audio, `quickCraft`, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
+
+### On-screen keyboard
+
+Whenever a text box has focus (chat, signs, books, anvils, search boxes, profile names) a keyboard appears. Move with the D-pad or left stick.
+
+| Button | Does |
+|---|---|
+| Cross | Type the highlighted key |
+| Square / Triangle | Delete / space |
+| L1 / R1 | Shift / symbols |
+| L2 / R2 | Move the text cursor |
+| R3 or the Tab key | Tab: completes commands and player names in chat |
+| Options | Enter (send chat, confirm) |
+| Circle | Hide the keyboard (press Cross on the text box to bring it back) |
+
+### Quick craft
+
+Beside the inventory and the crafting table, a list shows everything you can craft right now from what you carry. L1/R1 pick a recipe, R2 crafts one and L2 crafts as many as possible; with a mouse, click a row (shift-click for all). It uses the same request as the recipe book, so it works on any server. It does not appear in the creative inventory, which has no crafting grid.
+
+### Rumble and adaptive triggers
+
+Controllers rumble when you take damage (harder for bigger hits) and tick when you break a block. On a DualSense, L2 tightens as you draw a bow, crossbow or trident, and R2 resists while your attack recharges. Xbox pads get a light trigger buzz while drawing instead.
 
 ## Limitations
 
 - **Launcher compatibility for auto-launch:** the mod restarts the game using the current process's own command line. That works with the official launcher, Modrinth App, CurseForge and ATLauncher. **Prism Launcher and MultiMC** hide the command line. Fabric still works there through a fallback, but on Forge under Prism you must start the extra windows yourself. Windows started by hand join the session and get tiled anyway; give each one a controller by pressing Cross.
 - **Multiplayer servers:** guests use offline profiles, so joining a remote server only works if that server runs in offline mode. Singleplayer/LAN worlds always work.
-- **Text entry** (chat, signs, profile names) needs a keyboard. Click a window to give it keyboard focus.
 - **Performance:** every player runs a full copy of the game, so 3–4 players needs plenty of RAM and a decent GPU.
 - **Controlify** reads controllers too, so Fabric refuses to start with both installed. pcal's *Splitscreen Support* also moves windows around and is flagged as a conflict.
 
