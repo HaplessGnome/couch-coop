@@ -19,6 +19,14 @@ public abstract class MinecraftMixin {
         }
     }
 
+    @Inject(method = "close", at = @At("HEAD"))
+    private void couchcoop$onClose(CallbackInfo ci) {
+        CouchCoopClient client = CouchCoopClient.get();
+        if (client != null) {
+            client.onShutdown();
+        }
+    }
+
     /** Only one splitscreen window can be focused; the others must not open the pause menu. */
     @Inject(method = "pauseIfInactive", at = @At("HEAD"), cancellable = true)
     private void couchcoop$keepPlayingUnfocused(CallbackInfo ci) {

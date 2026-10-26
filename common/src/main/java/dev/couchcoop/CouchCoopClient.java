@@ -6,6 +6,7 @@ import dev.couchcoop.input.ControllerInput;
 import dev.couchcoop.input.Gamepad;
 import dev.couchcoop.input.GamepadInput;
 import dev.couchcoop.input.GamepadManager;
+import dev.couchcoop.input.Haptics;
 import dev.couchcoop.profile.Profile;
 import dev.couchcoop.profile.ProfilePicker;
 import dev.couchcoop.profile.ProfileScreen;
@@ -51,6 +52,7 @@ public final class CouchCoopClient {
     private final SessionCoordinator session = new SessionCoordinator();
     private final WindowLayout layout = new WindowLayout();
     private final QuickCraft quickCraft = new QuickCraft();
+    private final Haptics haptics = new Haptics();
     private final long startedAt = System.currentTimeMillis();
 
     private Gamepad pad;
@@ -465,6 +467,22 @@ public final class CouchCoopClient {
         }
         if (CouchCoop.isChild()) {
             childLifecycle(minecraft);
+        }
+        if (pad != null) {
+            haptics.tick(minecraft, pad);
+        }
+    }
+
+    public void onBlockBroken() {
+        if (pad != null) {
+            haptics.blockBroken(pad);
+        }
+    }
+
+    /** The game is closing: free the triggers so the controller isn't left stiff. */
+    public void onShutdown() {
+        if (pad != null) {
+            haptics.reset(pad);
         }
     }
 

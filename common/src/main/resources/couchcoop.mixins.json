@@ -11,6 +11,7 @@
     "KeyboardInputMixin",
     "MinecraftMixin",
     "MouseHandlerMixin",
+    "MultiPlayerGameModeMixin",
     "OptionsMixin",
     "PlayerInfoMixin"
   ],

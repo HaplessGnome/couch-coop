@@ -21,6 +21,8 @@ public final class Gamepad {
     private final boolean[] previous = new boolean[INPUTS.length];
     private final float[] axes = new float[SDL_GAMEPAD_AXIS_COUNT];
     private boolean active;
+    private TriggerEffect leftTrigger;
+    private TriggerEffect rightTrigger;
 
     Gamepad(int instanceId, long handle, String key) {
         this.instanceId = instanceId;
@@ -109,6 +111,34 @@ public final class Gamepad {
     public void rumble(float strength, int millis) {
         short s = (short) Math.round(Math.clamp(strength, 0f, 1f) * 0xFFFF);
         SDL_RumbleGamepad(handle, s, s, millis);
+    }
+
+    /** Sets DualSense adaptive trigger effects; repeated calls with the same effects send nothing. */
+    public void setTriggers(TriggerEffect left, TriggerEffect right) {
+        if (type != SDL_GAMEPAD_TYPE_PS5 || (left.equals(leftTrigger) && right.equals(rightTrigger))) {
+            return;
+        }
+        leftTrigger = left;
+        rightTrigger = right;
+        byte[] report = TriggerEffect.report(left, right);
+        java.nio.ByteBuffer buffer = org.lwjgl.system.MemoryUtil.memAlloc(report.length);
+        try {
+            buffer.put(report).flip();
+            SDL_SendGamepadEffect(handle, buffer);
+        } finally {
+            org.lwjgl.system.MemoryUtil.memFree(buffer);
+        }
+    }
+
+    public boolean hasAdaptiveTriggers() {
+        return type == SDL_GAMEPAD_TYPE_PS5;
+    }
+
+    /** Xbox One/Series impulse triggers; other pads ignore it. */
+    public void rumbleTriggers(float left, float right, int millis) {
+        short l = (short) Math.round(Math.clamp(left, 0f, 1f) * 0xFFFF);
+        short r = (short) Math.round(Math.clamp(right, 0f, 1f) * 0xFFFF);
+        SDL_RumbleGamepadTriggers(handle, l, r, millis);
     }
 
     boolean isConnected() {
