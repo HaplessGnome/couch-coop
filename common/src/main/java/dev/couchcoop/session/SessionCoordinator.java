@@ -27,7 +27,8 @@ import java.util.UUID;
 public final class SessionCoordinator {
     public static final int MAX_SLOTS = 4;
 
-    public record Peer(int slot, long pid, String name, String padKey, boolean inWorld, boolean child) {
+    /** {@code accountId} is the signed-in Minecraft account's id for a host window, empty for guests. */
+    public record Peer(int slot, long pid, String name, String padKey, boolean inWorld, boolean child, String accountId) {
         public boolean hasPad() {
             return !padKey.isEmpty();
         }
@@ -140,12 +141,12 @@ public final class SessionCoordinator {
     }
 
     /** Writes this instance's state and re-reads everyone else's. */
-    public void sync(String name, boolean inWorld) {
+    public void sync(String name, boolean inWorld, String accountId) {
         if (slot < 0) {
             peers = List.of();
             return;
         }
-        Peer self = new Peer(slot, ProcessHandle.current().pid(), name, padKey == null ? "" : padKey, inWorld, CouchCoop.isChild());
+        Peer self = new Peer(slot, ProcessHandle.current().pid(), name, padKey == null ? "" : padKey, inWorld, CouchCoop.isChild(), accountId);
         write(self);
 
         List<Peer> found = new ArrayList<>();
@@ -183,6 +184,7 @@ public final class SessionCoordinator {
         props.setProperty("pad", peer.padKey());
         props.setProperty("inWorld", Boolean.toString(peer.inWorld()));
         props.setProperty("child", Boolean.toString(peer.child()));
+        props.setProperty("account", peer.accountId());
         Path target = statusFile(peer.slot());
         Path temp = target.resolveSibling(target.getFileName() + ".tmp");
         try {
@@ -209,7 +211,8 @@ public final class SessionCoordinator {
             props.getProperty("name", "?"),
             props.getProperty("pad", ""),
             Boolean.parseBoolean(props.getProperty("inWorld")),
-            Boolean.parseBoolean(props.getProperty("child"))
+            Boolean.parseBoolean(props.getProperty("child")),
+            props.getProperty("account", "")
         );
     }
 

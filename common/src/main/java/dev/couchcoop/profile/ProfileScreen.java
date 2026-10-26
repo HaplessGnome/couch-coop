@@ -1,11 +1,12 @@
 package dev.couchcoop.profile;
 
 import dev.couchcoop.CouchCoop;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.Set;
@@ -26,9 +27,12 @@ public final class ProfileScreen extends Screen {
 
     private String name;
     private String skin;
-    private boolean slim;
+    /** null = automatic, as stored in {@link Profile#slim}. */
+    private Boolean slim;
     private String problem;
     private Button saveButton;
+    private EditBox nameBox;
+    private EditBox skinBox;
 
     /**
      * @param original   the profile to edit, or null to create one
@@ -41,7 +45,7 @@ public final class ProfileScreen extends Screen {
         this.onDone = onDone;
         this.name = original == null ? "" : original.name;
         this.skin = original == null || original.skin == null ? "" : original.skin;
-        this.slim = original != null && original.isSlim();
+        this.slim = original == null ? null : original.slim;
     }
 
     @Override
@@ -49,7 +53,7 @@ public final class ProfileScreen extends Screen {
         int left = width / 2 - 100;
         int y = height / 2 - 60;
 
-        EditBox nameBox = new EditBox(font, left, y, 200, 20, Component.literal("Name"));
+        nameBox = new EditBox(font, left, y, 200, 20, Component.literal("Name"));
         nameBox.setMaxLength(16);
         nameBox.setHint(Component.literal("Name: 3-16 letters, digits or _"));
         nameBox.setValue(name);
@@ -59,17 +63,19 @@ public final class ProfileScreen extends Screen {
         });
         addRenderableWidget(nameBox);
 
-        EditBox skinBox = new EditBox(font, left, y + 26, 200, 20, Component.literal("Skin"));
+        skinBox = new EditBox(font, left, y + 26, 200, 20, Component.literal("Skin"));
         skinBox.setMaxLength(260);
         skinBox.setHint(Component.literal("Skin: Minecraft username or PNG path"));
         skinBox.setValue(skin);
         skinBox.setResponder(value -> skin = value);
         addRenderableWidget(skinBox);
 
-        addRenderableWidget(Checkbox.builder(Component.literal("Slim arms (PNG skins)"), font)
-            .pos(left, y + 52)
-            .selected(slim)
-            .onValueChange((box, value) -> slim = value)
+        // A button rather than a checkbox: one press cycles it, easy with a controller.
+        addRenderableWidget(Button.builder(armsLabel(), button -> {
+                slim = slim == null ? Boolean.FALSE : slim ? null : Boolean.TRUE;
+                button.setMessage(armsLabel());
+            })
+            .bounds(left, y + 52, 200, 20)
             .build());
 
         saveButton = addRenderableWidget(Button.builder(Component.literal(original == null ? "Create and play" : "Save and play"), button -> save())
@@ -86,6 +92,35 @@ public final class ProfileScreen extends Screen {
 
         setInitialFocus(nameBox);
         validate();
+    }
+
+    /**
+     * Enter steps through the form: name, then skin, then save. With the controller's on-screen
+     * keyboard up, Options sends Enter, so a player never needs the D-pad to reach the next field.
+     */
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == InputConstants.KEY_RETURN || event.key() == InputConstants.KEY_NUMPADENTER) {
+            if (getFocused() == nameBox) {
+                setFocused(skinBox);
+                return true;
+            }
+            if (getFocused() == skinBox) {
+                validate();
+                if (problem == null) {
+                    save();
+                } else {
+                    setFocused(nameBox);
+                }
+                return true;
+            }
+        }
+        return super.keyPressed(event);
+    }
+
+    private Component armsLabel() {
+        String model = slim == null ? "Auto (from the skin)" : slim ? "Slim" : "Wide";
+        return Component.literal("Arms: " + model);
     }
 
     private void validate() {
@@ -117,7 +152,7 @@ public final class ProfileScreen extends Screen {
             profile.lastController = original.lastController;
         }
         profile.skin = skin.isBlank() ? null : skin.trim();
-        profile.slim = slim ? Boolean.TRUE : null;
+        profile.slim = slim;
         CouchCoop.profiles().save(profile, original == null ? null : original.name);
         finish(profile);
     }
@@ -143,6 +178,7 @@ public final class ProfileScreen extends Screen {
         int top = height / 2 - 60;
         centered(graphics, title.getString(), top - 34, TEXT);
         centered(graphics, "Each profile keeps its own inventory and position in every world.", top - 20, MUTED);
+        centered(graphics, "Enter (Options on a controller) moves to the next field", top + 140, MUTED);
         if (problem != null) {
             centered(graphics, problem, top + 74, ERROR);
         }

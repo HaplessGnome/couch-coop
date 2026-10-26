@@ -56,6 +56,8 @@ public final class CouchCoopClient {
     private final long startedAt = System.currentTimeMillis();
 
     private Gamepad pad;
+    /** The joining controller, while its player fills in the profile form in this window. */
+    private Gamepad formPad;
     private boolean hadPad;
     private long padMissingSince;
     private String wantedPadKey = System.getProperty(CouchCoop.PROP_PAD);
@@ -91,7 +93,7 @@ public final class CouchCoopClient {
     }
 
     public static boolean isControllerDriven() {
-        return instance != null && instance.pad != null;
+        return instance != null && instance.menuPad() != null;
     }
 
     public static boolean isCursorActive() {
@@ -102,6 +104,20 @@ public final class CouchCoopClient {
         return input;
     }
 
+    /**
+     * The real account id of a host window's player with this name, or null. The shared world
+     * runs offline for guests, so other windows can't get that player's skin from the server.
+     */
+    public String hostAccountId(String playerName) {
+        for (Peer peer : session.peers()) {
+            // This window's own player already gets their skin from vanilla.
+            if (peer.slot() != session.slot() && !peer.child() && !peer.accountId().isEmpty() && peer.name().equalsIgnoreCase(playerName)) {
+                return peer.accountId();
+            }
+        }
+        return null;
+    }
+
     public QuickCraft quickCraft() {
         return quickCraft;
     }
@@ -109,6 +125,11 @@ public final class CouchCoopClient {
     /** This window's controller, or null when it is played on keyboard and mouse. */
     public Gamepad pad() {
         return pad;
+    }
+
+    /** The controller driving this window's menus: a joining player's while they fill in their profile. */
+    public Gamepad menuPad() {
+        return formPad != null ? formPad : pad;
     }
 
     /** The on-screen keyboard is up in this window's open screen. */
@@ -136,8 +157,12 @@ public final class CouchCoopClient {
         resolvePad();
         updatePicker(minecraft);
         handleJoinGestures(minecraft);
-        if (pad != null) {
-            input.frame(minecraft, pad, delta);
+        if (formPad != null && (!(minecraft.gui.screen() instanceof ProfileScreen) || gamepads.find(formPad.key()) != formPad)) {
+            formPad = null;
+        }
+        Gamepad driver = menuPad();
+        if (driver != null) {
+            input.frame(minecraft, driver, delta);
         }
         // Typing in the recipe search box uses the same shoulder buttons, so the keyboard wins.
         quickCraft.frame(minecraft, pad != null && !input.keyboard().isVisible() ? pad : null);
@@ -194,7 +219,7 @@ public final class CouchCoopClient {
         long now = System.currentTimeMillis();
         for (Gamepad candidate : gamepads.pads()) {
             String key = candidate.key();
-            if (key.equals(session.padKey()) || (picker != null && picker.pad() == candidate)) {
+            if (key.equals(session.padKey()) || (picker != null && picker.pad() == candidate) || candidate == formPad) {
                 continue;
             }
 
@@ -346,7 +371,14 @@ public final class CouchCoopClient {
         if (profile != null) {
             taken.remove(profile.name.toLowerCase(Locale.ROOT));
         }
+        // The joining player fills in the form with their own controller; this window's player waits.
+        formPad = candidate;
         minecraft.gui.setScreen(new ProfileScreen(profile, taken, saved -> {
+            formPad = null;
+            if (pad == null && minecraft.gui.screen() == null) {
+                // The form closed while it held the cursor; give a keyboard player their mouse back.
+                minecraft.mouseHandler.grabMouse();
+            }
             if (saved != null) {
                 launchGuest(minecraft, candidate, saved);
             } else if (gamepads.find(candidate.key()) == candidate && session.isPadFree(candidate.key())) {
@@ -487,7 +519,9 @@ public final class CouchCoopClient {
     }
 
     private void sync(Minecraft minecraft) {
-        session.sync(minecraft.getUser().getName(), minecraft.level != null);
+        // Guests play offline, so only a host window's account id is a real one worth sharing.
+        String accountId = CouchCoop.isChild() ? "" : minecraft.getUser().getProfileId().toString().replace("-", "");
+        session.sync(minecraft.getUser().getName(), minecraft.level != null, accountId);
         List<Peer> peers = session.peers();
         int index = -1;
         for (int i = 0; i < peers.size(); i++) {

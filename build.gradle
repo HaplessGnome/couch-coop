@@ -33,7 +33,7 @@ configure(subprojects.findAll { it.name != 'common' }) {
         mod_author       : mod_author,
         mod_description  : mod_description,
         minecraft_version: minecraft_version,
-        fabric_loader_version: fabric_loader_version,
+        fabric_loader_min: fabric_loader_min,
         forge_major      : forge_version.tokenize('.')[0],
     ]
     tasks.named('processResources', ProcessResources) {

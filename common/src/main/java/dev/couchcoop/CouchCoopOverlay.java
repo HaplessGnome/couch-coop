@@ -56,7 +56,7 @@ public final class CouchCoopOverlay {
             quickCraft(graphics, font, client.quickCraft(), minecraft, client.pad());
         }
         if (CouchCoopClient.isKeyboardActive()) {
-            keyboard(graphics, font, client.input().keyboard(), client.pad());
+            keyboard(graphics, font, client.input().keyboard(), client.menuPad());
         } else if (CouchCoopClient.isCursorActive()) {
             VirtualCursor cursor = client.input().cursor();
             cursor(graphics, (int) cursor.x(), (int) cursor.y());

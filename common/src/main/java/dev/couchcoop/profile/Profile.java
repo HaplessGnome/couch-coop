@@ -11,7 +11,7 @@ public final class Profile {
     public String name;
     /** A Minecraft username to borrow the skin of, or a path to a 64x64 PNG; null for the default skin. */
     public String skin;
-    /** Arm model for PNG skins. Username skins use their owner's model. */
+    /** Arm model: true slim, false wide, null automatic (read from a PNG, or the account's own model). */
     public Boolean slim;
     public Double lookSensitivity;
     public Boolean invertLookY;
@@ -31,7 +31,4 @@ public final class Profile {
         return skin != null && !skin.isBlank();
     }
 
-    public boolean isSlim() {
-        return Boolean.TRUE.equals(slim);
-    }
 }
