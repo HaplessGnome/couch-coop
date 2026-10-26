@@ -57,7 +57,9 @@ public final class CouchCoopClient {
 
     private final GamepadManager gamepads = new GamepadManager();
     private final ControllerInput input = new ControllerInput();
-    private final SessionCoordinator session = new SessionCoordinator();
+    // The config folder sits in the game directory on both loaders, and unlike Minecraft's own
+    // field it is known before the first frame-limit check during startup.
+    private final SessionCoordinator session = new SessionCoordinator(CouchCoop.platform().configDir().toAbsolutePath().getParent());
     private final WindowLayout layout = new WindowLayout();
     private final QuickCraft quickCraft = new QuickCraft();
     private final Haptics haptics = new Haptics();
@@ -175,7 +177,6 @@ public final class CouchCoopClient {
     }
 
     private void frame(Minecraft minecraft, double delta) {
-
         gamepads.update();
         resolvePad();
         updatePicker(minecraft);
@@ -494,14 +495,15 @@ public final class CouchCoopClient {
         return current == null ? null : current.ip;
     }
 
+    /** The next free quick-guest name. Saved profiles' names are skipped, so a quick guest never inherits one's skin or items. */
     private String nextPlayerName(CouchCoopConfig config) {
-        Set<String> taken = new HashSet<>(pendingNames.values());
-        for (Peer peer : session.peers()) {
-            taken.add(peer.name());
+        Set<String> taken = takenNames();
+        for (Profile profile : CouchCoop.profiles().all()) {
+            taken.add(profile.name.toLowerCase(Locale.ROOT));
         }
         for (int number = 2; ; number++) {
             String name = config.playerNamePrefix + number;
-            if (!taken.contains(name)) {
+            if (!taken.contains(name.toLowerCase(Locale.ROOT))) {
                 return name;
             }
         }

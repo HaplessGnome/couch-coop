@@ -2,6 +2,7 @@ package dev.couchcoop.session;
 
 import dev.couchcoop.CouchCoop;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -14,6 +15,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -43,14 +45,24 @@ public final class SessionCoordinator {
     private FileLock padLock;
     private List<Peer> peers = List.of();
 
-    public SessionCoordinator() {
-        this.dir = Path.of(System.getProperty("java.io.tmpdir"), CouchCoop.MOD_ID);
+    /**
+     * @param gameDir this instance's game directory. Only windows playing from the same game
+     *                directory share a session, so two unrelated instances running at once (say,
+     *                two launcher profiles) are never tiled together.
+     */
+    public SessionCoordinator(Path gameDir) {
+        this.dir = Path.of(System.getProperty("java.io.tmpdir"), CouchCoop.MOD_ID, sessionName(gameDir));
         try {
             Files.createDirectories(dir);
             claimSlot();
         } catch (IOException e) {
             CouchCoop.LOGGER.error("Couch Co-op session directory {} is unusable", dir, e);
         }
+    }
+
+    static String sessionName(Path gameDir) {
+        String normalised = gameDir.toAbsolutePath().normalize().toString().replace(File.separatorChar, '/').toLowerCase(Locale.ROOT);
+        return "session-" + UUID.nameUUIDFromBytes(normalised.getBytes(StandardCharsets.UTF_8)).toString().substring(0, 8);
     }
 
     public Path directory() {

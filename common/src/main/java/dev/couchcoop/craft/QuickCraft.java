@@ -37,7 +37,6 @@ public final class QuickCraft {
     public record Layout(int left, int top, int width, int rowHeight, int firstRow, int rows) {
     }
 
-    private static final int REFRESH_FRAMES = 10;
     private static final long TAKE_TIMEOUT_MS = 1_500;
     public static final int PANEL_WIDTH = 120;
     public static final int ROW_HEIGHT = 18;
@@ -47,7 +46,9 @@ public final class QuickCraft {
     private Screen screen;
     private int selected;
     private RecipeDisplayId selectedId;
-    private int framesUntilRefresh;
+    /** Inventory and menu change counters at the last refresh; the list is rebuilt only when they move. */
+    private int seenInventoryChanges = -1;
+    private int seenMenuState = -1;
     private Layout layout;
 
     private ItemStack pending;
@@ -93,11 +94,15 @@ public final class QuickCraft {
         }
         if (current != screen) {
             screen = current;
-            framesUntilRefresh = 0;
+            seenInventoryChanges = -1;
             pending = null;
         }
-        if (--framesUntilRefresh <= 0) {
-            framesUntilRefresh = REFRESH_FRAMES;
+        // Checking every recipe is costly, so only when the inventory or crafting grid changed.
+        int inventoryChanges = minecraft.player.getInventory().getTimesChanged();
+        int menuState = menu.getStateId();
+        if (inventoryChanges != seenInventoryChanges || menuState != seenMenuState) {
+            seenInventoryChanges = inventoryChanges;
+            seenMenuState = menuState;
             refresh(minecraft, menu);
         }
         layout = place(container);
@@ -205,7 +210,7 @@ public final class QuickCraft {
         if (result.hasItem() && ItemStack.isSameItem(result.getItem(), pending)) {
             minecraft.gameMode.handleContainerInput(menu.containerId, result.index, 0, ContainerInput.QUICK_MOVE, minecraft.player);
             pending = null;
-            framesUntilRefresh = 0;
+            seenInventoryChanges = -1;
         } else if (System.currentTimeMillis() - pendingSince > TAKE_TIMEOUT_MS) {
             pending = null;
         }
