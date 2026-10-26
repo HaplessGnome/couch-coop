@@ -95,8 +95,9 @@ public final class ProfileScreen extends Screen {
     }
 
     /**
-     * Enter steps through the form: name, then skin, then save. With the controller's on-screen
-     * keyboard up, Options sends Enter, so a player never needs the D-pad to reach the next field.
+     * Enter steps through the form: name, then skin, then save; on a focused button it presses
+     * it. A controller's Options sends Enter here, keyboard up or not, so a player never needs the
+     * D-pad to reach the next field.
      */
     @Override
     public boolean keyPressed(KeyEvent event) {
@@ -105,15 +106,17 @@ public final class ProfileScreen extends Screen {
                 setFocused(skinBox);
                 return true;
             }
-            if (getFocused() == skinBox) {
-                validate();
-                if (problem == null) {
-                    save();
-                } else {
-                    setFocused(nameBox);
-                }
-                return true;
+            if (getFocused() instanceof Button) {
+                // A focused button (Arms, Cancel, Delete) gets pressed, as Enter normally does.
+                return super.keyPressed(event);
             }
+            validate();
+            if (problem == null) {
+                save();
+            } else {
+                setFocused(nameBox);
+            }
+            return true;
         }
         return super.keyPressed(event);
     }

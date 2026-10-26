@@ -7,6 +7,7 @@ import dev.couchcoop.config.CouchCoopConfig;
 import dev.couchcoop.config.CouchCoopConfig.Action;
 import dev.couchcoop.craft.QuickCraft;
 import dev.couchcoop.mixin.AbstractContainerScreenAccessor;
+import dev.couchcoop.profile.ProfileScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
@@ -36,6 +37,7 @@ public final class VirtualCursor {
 
     // SDL keycodes Minecraft uses as KeyEvent#shortcutKey for these scancodes.
     private static final int SDLK_ESCAPE = 0x1B;
+    private static final int SDLK_RETURN = 0x0D;
     private static final int SDLK_RIGHT = 0x4000004F;
     private static final int SDLK_LEFT = 0x40000050;
     private static final int SDLK_DOWN = 0x40000051;
@@ -95,7 +97,10 @@ public final class VirtualCursor {
         button(current, pad, config.binding(Action.MENU_QUICK_MOVE), InputConstants.MOUSE_BUTTON_LEFT, InputConstants.MOD_SHIFT);
         button(current, pad, config.binding(Action.MENU_RIGHT_CLICK), InputConstants.MOUSE_BUTTON_RIGHT, 0);
 
-        if (pad.pressed(config.binding(Action.MENU_BACK)) || pad.pressed(GamepadInput.OPTIONS)) {
+        if (pad.pressed(GamepadInput.OPTIONS) && current instanceof ProfileScreen) {
+            // On the profile form Options means "next / done", as it does with the keyboard up.
+            key(current, InputConstants.KEY_RETURN, SDLK_RETURN);
+        } else if (pad.pressed(config.binding(Action.MENU_BACK)) || pad.pressed(GamepadInput.OPTIONS)) {
             key(current, InputConstants.KEY_ESCAPE, SDLK_ESCAPE);
         }
         Navigation.Direction direction = dpadDirection(pad);
