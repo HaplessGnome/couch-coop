@@ -44,6 +44,14 @@ public final class CouchCoopClient {
     private static final long PAD_GRACE_MS = 30_000;
     private static final long CHILD_EXIT_DELAY_MS = 5_000;
     private static final int SYNC_INTERVAL_TICKS = 20;
+    /**
+     * Longest frame the controller's look and cursor speed account for. Generous, so the camera
+     * keeps pace with the stick while frames are slow (chunks loading after a join), but a long
+     * freeze still can't spin the view around.
+     */
+    private static final double MAX_FRAME_SECONDS = 0.25;
+    /** Our own per-frame or per-tick work taking longer than this is logged as a likely cause of lag. */
+    private static final long SLOW_WORK_NANOS = 15_000_000;
 
     private static CouchCoopClient instance;
 
@@ -72,6 +80,7 @@ public final class CouchCoopClient {
     private boolean hintPlayStation;
 
     private long lastFrameNanos = System.nanoTime();
+    private long frames;
     private int ticks;
     private boolean childAudioApplied;
     private boolean wasInWorld;
@@ -150,8 +159,16 @@ public final class CouchCoopClient {
 
     public void onFrame(Minecraft minecraft) {
         long now = System.nanoTime();
-        double delta = Math.min((now - lastFrameNanos) / 1.0e9, 0.1);
+        double delta = Math.min((now - lastFrameNanos) / 1.0e9, MAX_FRAME_SECONDS);
         lastFrameNanos = now;
+        frame(minecraft, delta);
+        // The first frames start SDL's controller support and open every pad: slow, but only once.
+        if (++frames > 10) {
+            warnIfSlow("frame", now);
+        }
+    }
+
+    private void frame(Minecraft minecraft, double delta) {
 
         gamepads.update();
         resolvePad();
@@ -493,7 +510,26 @@ public final class CouchCoopClient {
 
     // ---------------------------------------------------------------- tick
 
+    private static void warnIfSlow(String what, long startNanos) {
+        long took = System.nanoTime() - startNanos;
+        if (took > SLOW_WORK_NANOS) {
+            CouchCoop.LOGGER.warn("Couch Co-op {} work took {} ms", what, took / 1_000_000);
+        }
+    }
+
+    /** The frame cap while the screen is split, or 0 for none. */
+    public int splitFrameLimit() {
+        int limit = CouchCoop.config().splitFrameLimit;
+        return limit > 0 && session.peers().size() > 1 ? limit : 0;
+    }
+
     public void onTick(Minecraft minecraft) {
+        long start = System.nanoTime();
+        tick(minecraft);
+        warnIfSlow("tick", start);
+    }
+
+    private void tick(Minecraft minecraft) {
         if (ticks++ % SYNC_INTERVAL_TICKS == 0) {
             sync(minecraft);
         }

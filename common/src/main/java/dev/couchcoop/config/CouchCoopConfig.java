@@ -76,6 +76,7 @@ public final class CouchCoopConfig {
 
     public Layout layout = Layout.TOP_BOTTOM;
     public boolean coverTaskbar = true;
+    public int splitFrameLimit = 60;
     public int maxPlayers = 4;
     public String playerNamePrefix = "Player";
     public double lookSensitivity = 1.0;
@@ -131,6 +132,7 @@ public final class CouchCoopConfig {
 
         config.layout = parseEnum(props.getProperty("layout"), Layout.class, config.layout);
         config.coverTaskbar = Boolean.parseBoolean(props.getProperty("coverTaskbar", Boolean.toString(config.coverTaskbar)));
+        config.splitFrameLimit = Math.max(0, parseInt(props.getProperty("splitFrameLimit"), config.splitFrameLimit));
         config.maxPlayers = Math.clamp(parseInt(props.getProperty("maxPlayers"), config.maxPlayers), 1, 4);
         config.playerNamePrefix = props.getProperty("playerNamePrefix", config.playerNamePrefix).trim();
         config.lookSensitivity = parseDouble(props.getProperty("lookSensitivity"), config.lookSensitivity);
@@ -156,6 +158,7 @@ public final class CouchCoopConfig {
             # Couch Co-op config
             # layout: TOP_BOTTOM or SIDE_BY_SIDE (how two players share the screen)
             # coverTaskbar: true tiles over the whole monitor like one fullscreen game; false leaves the taskbar visible
+            # splitFrameLimit: max FPS per window while the screen is split, so windows share the GPU evenly (0 = off)
             # quickCraft: list craftable items beside the inventory and crafting table (L1/R1 pick, R2 craft, L2 craft all)
             # rumble: vibrate when hurt or breaking blocks (rumbleStrength 0-1)
             # adaptiveTriggers: DualSense L2 stiffens while drawing a bow, R2 resists while the attack recharges
@@ -167,6 +170,7 @@ public final class CouchCoopConfig {
             """);
         line(out, "layout", layout.name());
         line(out, "coverTaskbar", coverTaskbar);
+        line(out, "splitFrameLimit", splitFrameLimit);
         line(out, "maxPlayers", maxPlayers);
         line(out, "playerNamePrefix", playerNamePrefix);
         line(out, "lookSensitivity", lookSensitivity);
