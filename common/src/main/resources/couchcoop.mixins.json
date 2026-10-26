@@ -4,9 +4,10 @@
   "package": "dev.couchcoop.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "AbstractContainerScreenAccessor",
     "GuiMixin",
-    "KeyboardInputMixin",
     "KeyMappingAccessor",
+    "KeyboardInputMixin",
     "MinecraftMixin",
     "MouseHandlerMixin",
     "OptionsMixin",

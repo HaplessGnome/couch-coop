@@ -4,16 +4,26 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.couchcoop.CouchCoop;
 import dev.couchcoop.config.CouchCoopConfig;
 import dev.couchcoop.config.CouchCoopConfig.Action;
+import dev.couchcoop.mixin.AbstractContainerScreenAccessor;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.world.inventory.Slot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.lwjgl.sdl.SDLGamepad.*;
 
 /**
- * A per-window mouse pointer driven by the left stick. It never moves the OS cursor (there is
+ * A per-window mouse pointer driven by the left stick, with D-pad jumps between slots and buttons. It never moves the OS cursor (there is
  * only one of those for all players); instead it feeds events straight to the open screen and
  * {@link dev.couchcoop.mixin.MouseHandlerMixin} reports its position for hover and tooltips.
  */
@@ -36,6 +46,7 @@ public final class VirtualCursor {
     private int heldModifiers;
     private double scrollRemainder;
     private long lastClickTime;
+    private final HeldRepeat dpadRepeat = new HeldRepeat();
 
     public boolean isActive() {
         return screen != null;
@@ -85,17 +96,9 @@ public final class VirtualCursor {
         if (pad.pressed(config.binding(Action.MENU_BACK)) || pad.pressed(GamepadInput.OPTIONS)) {
             key(current, InputConstants.KEY_ESCAPE, SDLK_ESCAPE);
         }
-        if (pad.pressed(GamepadInput.DPAD_UP)) {
-            key(current, InputConstants.KEY_UP, SDLK_UP);
-        }
-        if (pad.pressed(GamepadInput.DPAD_DOWN)) {
-            key(current, InputConstants.KEY_DOWN, SDLK_DOWN);
-        }
-        if (pad.pressed(GamepadInput.DPAD_LEFT)) {
-            key(current, InputConstants.KEY_LEFT, SDLK_LEFT);
-        }
-        if (pad.pressed(GamepadInput.DPAD_RIGHT)) {
-            key(current, InputConstants.KEY_RIGHT, SDLK_RIGHT);
+        Navigation.Direction direction = dpadDirection(pad);
+        if (dpadRepeat.step(direction, System.currentTimeMillis())) {
+            navigate(current, direction);
         }
 
         // Right stick scrolls lists, one notch at a time.
@@ -120,6 +123,92 @@ public final class VirtualCursor {
             heldButton = -1;
             current.mouseReleased(event(button, modifiers));
         }
+    }
+
+    private static Navigation.Direction dpadDirection(Gamepad pad) {
+        if (pad.isDown(GamepadInput.DPAD_UP)) {
+            return Navigation.Direction.UP;
+        }
+        if (pad.isDown(GamepadInput.DPAD_DOWN)) {
+            return Navigation.Direction.DOWN;
+        }
+        if (pad.isDown(GamepadInput.DPAD_LEFT)) {
+            return Navigation.Direction.LEFT;
+        }
+        if (pad.isDown(GamepadInput.DPAD_RIGHT)) {
+            return Navigation.Direction.RIGHT;
+        }
+        return null;
+    }
+
+    /**
+     * Inventories have no keyboard navigation, so the D-pad jumps the cursor between slots and
+     * buttons there. Elsewhere the screen's own arrow-key focus handles it (including scrolling
+     * lists) and the cursor follows whatever got focus, so pressing click activates it.
+     */
+    private void navigate(Screen current, Navigation.Direction direction) {
+        if (current instanceof AbstractContainerScreen<?> container) {
+            Navigation.Target target = Navigation.next(targets(container), x, y, direction);
+            if (target != null) {
+                moveTo(current, target.centreX(), target.centreY());
+                return;
+            }
+        }
+        switch (direction) {
+            case UP -> key(current, InputConstants.KEY_UP, SDLK_UP);
+            case DOWN -> key(current, InputConstants.KEY_DOWN, SDLK_DOWN);
+            case LEFT -> key(current, InputConstants.KEY_LEFT, SDLK_LEFT);
+            case RIGHT -> key(current, InputConstants.KEY_RIGHT, SDLK_RIGHT);
+        }
+        GuiEventListener focused = focusedLeaf(current);
+        if (focused != null) {
+            ScreenRectangle area = focused.getRectangle();
+            if (area.width() > 0 && area.height() > 0) {
+                moveTo(current, area.left() + area.width() / 2.0, area.top() + area.height() / 2.0);
+            }
+        }
+    }
+
+    private static List<Navigation.Target> targets(AbstractContainerScreen<?> container) {
+        List<Navigation.Target> targets = new ArrayList<>();
+        AbstractContainerScreenAccessor accessor = (AbstractContainerScreenAccessor) container;
+        int left = accessor.couchcoop$getLeftPos();
+        int top = accessor.couchcoop$getTopPos();
+        for (Slot slot : container.getMenu().slots) {
+            if (slot.isActive()) {
+                // Slots draw 16x16 inside an 18x18 cell.
+                targets.add(new Navigation.Target(left + slot.x - 1, top + slot.y - 1, 18, 18));
+            }
+        }
+        addWidgets(container, targets);
+        return targets;
+    }
+
+    private static void addWidgets(ContainerEventHandler parent, List<Navigation.Target> targets) {
+        for (GuiEventListener child : parent.children()) {
+            if (child instanceof AbstractWidget widget) {
+                if (widget.visible && widget.active) {
+                    targets.add(new Navigation.Target(widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+                }
+            } else if (child instanceof ContainerEventHandler nested) {
+                addWidgets(nested, targets);
+            }
+        }
+    }
+
+    private static GuiEventListener focusedLeaf(ContainerEventHandler parent) {
+        GuiEventListener focused = parent.getFocused();
+        while (focused instanceof ContainerEventHandler nested && nested.getFocused() != null) {
+            focused = nested.getFocused();
+        }
+        return focused;
+    }
+
+    private void moveTo(Screen current, double newX, double newY) {
+        x = newX;
+        y = newY;
+        current.mouseMoved(x, y);
+        current.afterMouseMove();
     }
 
     private MouseButtonEvent event(int button, int modifiers) {
