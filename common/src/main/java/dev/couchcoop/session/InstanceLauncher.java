@@ -28,6 +28,19 @@ public final class InstanceLauncher {
         "org.polymc.EntryPoint"
     );
     /** Arguments that identify the host's account or session; never passed to a guest. */
+    /**
+     * Launchers that start the game through a class of their own which first phones home, then
+     * calls the real main class named in its first argument. A guest can't phone home (the
+     * launcher only answers the instance it started), so guests skip straight to the real class.
+     */
+    private static final Set<String> RELAUNCH_MAIN_CLASSES = Set.of(
+        "com.modrinth.theseus.MinecraftLaunch"
+    );
+    /** JVM flags that only make sense for a relaunch wrapper talking to its launcher. */
+    private static final List<String> WRAPPER_JVM_PREFIXES = List.of(
+        "-Dmodrinth.internal.",
+        "-Dmodrinth.process."
+    );
     private static final Set<String> DROPPED_GAME_ARGS = Set.of(
         "--username", "--uuid", "--accessToken", "--xuid", "--clientId", "--userType",
         "--quickPlayPath", "--quickPlaySingleplayer", "--quickPlayMultiplayer", "--quickPlayRealms",
@@ -105,15 +118,31 @@ public final class InstanceLauncher {
      */
     private static Optional<List<String>> mainClassAndGameArgs() {
         String raw = System.getProperty("sun.java.command", "").trim();
-        String[] tokens = raw.isEmpty() ? new String[0] : raw.split(" ");
-        if (tokens.length == 0 || WRAPPER_MAIN_CLASSES.contains(tokens[0]) || tokens[0].endsWith(".jar")) {
+        String first = raw.isEmpty() ? "" : raw.split(" ")[0];
+        if (first.isEmpty() || WRAPPER_MAIN_CLASSES.contains(first) || first.endsWith(".jar")) {
             return CouchCoop.platform().fallbackLaunchCommand();
         }
+        return Optional.of(parseCommand(raw));
+    }
 
+    /**
+     * Splits the JVM's original main class and program arguments. Minecraft's arguments are all
+     * {@code --name value} pairs, so values that contained spaces are rebuilt by joining
+     * everything up to the next {@code --name}. Relaunch wrappers are replaced by the main class
+     * they would have called.
+     */
+    static List<String> parseCommand(String raw) {
+        String[] tokens = raw.trim().split(" ");
         List<String> result = new ArrayList<>();
-        result.add(tokens[0]);
+        int start = 1;
+        if (RELAUNCH_MAIN_CLASSES.contains(tokens[0]) && tokens.length > 1 && !tokens[1].startsWith("--")) {
+            result.add(tokens[1]);
+            start = 2;
+        } else {
+            result.add(tokens[0]);
+        }
         StringBuilder value = null;
-        for (int i = 1; i < tokens.length; i++) {
+        for (int i = start; i < tokens.length; i++) {
             String token = tokens[i];
             if (token.startsWith("--")) {
                 if (value != null) {
@@ -130,7 +159,23 @@ public final class InstanceLauncher {
         if (value != null) {
             result.add(value.toString());
         }
-        return Optional.of(result);
+        return result;
+    }
+
+    /** The wrapper's IPC settings and its Java agent, which patches the wrapper's own launch. */
+    static boolean isWrapperJvmArg(String arg) {
+        for (String prefix : WRAPPER_JVM_PREFIXES) {
+            if (arg.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return arg.startsWith("-javaagent:") && arg.toLowerCase(java.util.Locale.ROOT).endsWith("theseus.jar");
+    }
+
+    /** True when this game was started through a launcher's relaunch wrapper. */
+    private static boolean startedByWrapper() {
+        String raw = System.getProperty("sun.java.command", "").trim();
+        return RELAUNCH_MAIN_CLASSES.contains(raw.isEmpty() ? "" : raw.split(" ")[0]);
     }
 
     private static List<String> filterGameArgs(List<String> args) {
@@ -159,9 +204,13 @@ public final class InstanceLauncher {
      * into real flags. Debugger agents are dropped because their port is already in use.
      */
     private static List<String> jvmArguments() {
+        boolean wrapped = startedByWrapper();
         List<String> out = new ArrayList<>();
         for (String arg : ManagementFactory.getRuntimeMXBean().getInputArguments()) {
             if (arg.startsWith("-agentlib:jdwp") || arg.startsWith("-D" + CouchCoop.MOD_ID + ".")) {
+                continue;
+            }
+            if (wrapped && isWrapperJvmArg(arg)) {
                 continue;
             }
             int eq = arg.indexOf('=');

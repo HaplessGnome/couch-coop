@@ -104,7 +104,7 @@ Couch Co-op is not an official Minecraft product and is not approved by or assoc
 
 ## Building
 
-Requires JDK 25. Do not keep the project inside OneDrive: OneDrive locks build files and makes Gradle fail with "Unable to delete directory".
+Requires JDK 25.
 
 ```
 ./gradlew build
