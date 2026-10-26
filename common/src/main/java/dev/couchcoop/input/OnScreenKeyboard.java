@@ -1,15 +1,20 @@
 package dev.couchcoop.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import dev.couchcoop.CouchCoop;
+import dev.couchcoop.config.CouchCoopConfig.Action;
 import dev.couchcoop.input.KeyboardLayout.Cursor;
 import dev.couchcoop.input.KeyboardLayout.Key;
+import dev.couchcoop.profile.ProfileScreen;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.client.gui.screens.inventory.BookEditScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
@@ -39,8 +44,13 @@ public final class OnScreenKeyboard {
     private boolean shift;
     private boolean visible;
     private boolean atTop;
-    private Screen dismissedScreen;
-    private GuiEventListener dismissedFocus;
+    /** The screen and focus seen last frame, to notice the player moving focus. */
+    private Screen seenScreen;
+    private GuiEventListener lastFocus;
+    /** The player asked to type: a typing screen opened, or they went to a text box themselves. */
+    private boolean armed;
+    /** A click happened last frame; if it landed on a text box, that box is meant for typing. */
+    private boolean clickPending;
 
     public boolean isVisible() {
         return visible;
@@ -63,25 +73,50 @@ public final class OnScreenKeyboard {
         return shift;
     }
 
-    /** Decides whether the keyboard shows on this screen this frame. */
-    public boolean update(Screen screen, Gamepad pad) {
+    /**
+     * Decides whether the keyboard shows this frame. A text box that merely starts out focused,
+     * like the world list's search bar, doesn't open it: only typing screens (chat, signs, books,
+     * the profile form) do, or the player going to a text box by clicking it or moving onto it.
+     * {@code cursorX}/{@code cursorY} are the menu cursor, to tell where a click landed.
+     */
+    public boolean update(Screen screen, Gamepad pad, double cursorX, double cursorY) {
         GuiEventListener focus = focusedLeaf(screen);
-        boolean wanted = wantsText(screen, focus);
-        if (dismissedScreen != null && (dismissedScreen != screen || dismissedFocus != focus || pad.pressed(GamepadInput.CROSS))) {
-            // Hidden until focus moves or the player clicks again (for example on the text box).
-            dismissedScreen = null;
-            dismissedFocus = null;
-            if (pad.pressed(GamepadInput.CROSS)) {
-                wanted = false;
+        if (screen != seenScreen) {
+            seenScreen = screen;
+            lastFocus = focus;
+            armed = isTypingScreen(screen);
+            clickPending = false;
+        } else {
+            if (clickPending && focus != null && contains(focus.getRectangle(), cursorX, cursorY)) {
+                armed = true;
             }
+            if (focus != lastFocus) {
+                // Focus moved (D-pad, a click, Tab): show for a text box the player went to.
+                armed = focus != null;
+                lastFocus = focus;
+            }
+            clickPending = false;
         }
-        boolean show = wanted && dismissedScreen == null;
+        boolean show = armed && wantsText(screen, focus);
+        if (!show && pad.pressed(CouchCoop.config().binding(Action.MENU_CLICK))) {
+            // The menu cursor handles this click after us; check next frame what it hit.
+            clickPending = true;
+        }
         if (show && !visible) {
             ScreenRectangle area = focus == null ? null : focus.getRectangle();
             atTop = area != null && area.height() > 0 && area.top() + area.height() / 2 > screen.height / 2;
         }
         visible = show;
         return visible;
+    }
+
+    private static boolean isTypingScreen(Screen screen) {
+        return screen instanceof ChatScreen || screen instanceof AbstractSignEditScreen
+            || screen instanceof BookEditScreen || screen instanceof ProfileScreen;
+    }
+
+    private static boolean contains(ScreenRectangle area, double x, double y) {
+        return x >= area.left() && x < area.left() + area.width() && y >= area.top() && y < area.top() + area.height();
     }
 
     public void frame(Screen screen, Gamepad pad) {
@@ -118,8 +153,8 @@ public final class OnScreenKeyboard {
             key(screen, InputConstants.KEY_RETURN, SDLK_RETURN);
         }
         if (pad.pressed(GamepadInput.CIRCLE)) {
-            dismissedScreen = screen;
-            dismissedFocus = focusedLeaf(screen);
+            // Hidden until the player clicks the text box or moves focus again.
+            armed = false;
             visible = false;
         }
     }

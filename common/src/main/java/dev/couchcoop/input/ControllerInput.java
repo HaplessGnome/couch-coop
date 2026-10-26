@@ -66,7 +66,7 @@ public final class ControllerInput {
             releaseAll();
             movement = Vec2.ZERO;
             Screen screen = minecraft.gui.screen();
-            if (keyboard.update(screen, pad)) {
+            if (keyboard.update(screen, pad, cursor.x(), cursor.y())) {
                 keyboard.frame(screen, pad);
             } else {
                 cursor.frame(minecraft, screen, pad, deltaSeconds);
