@@ -10,9 +10,12 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static org.lwjgl.sdl.SDLError.SDL_GetError;
 import static org.lwjgl.sdl.SDLGamepad.*;
@@ -101,7 +104,9 @@ public final class GamepadManager {
 
         Map<String, Integer> guidCounts = new HashMap<>();
         for (int id : ids) {
-            String key = stableKey(id, guidCounts);
+            String path = SDL_GetGamepadPathForID(id);
+            String guid = guidString(id);
+            int ordinal = guidCounts.merge(guid, 1, Integer::sum) - 1;
             if (pads.containsKey(id)) {
                 continue;
             }
@@ -110,6 +115,11 @@ public final class GamepadManager {
                 CouchCoop.LOGGER.warn("Could not open controller {}: {}", id, SDL_GetError());
                 continue;
             }
+            Set<String> inUse = new HashSet<>();
+            for (Gamepad open : pads.values()) {
+                inUse.add(open.key());
+            }
+            String key = stableKey(SDL_GetGamepadSerial(handle), path, guid, ordinal, inUse);
             Gamepad pad = new Gamepad(id, handle, key);
             pads.put(id, pad);
             CouchCoop.LOGGER.info("Controller connected: {} ({})", pad.name(), key);
@@ -117,13 +127,17 @@ public final class GamepadManager {
     }
 
     /**
-     * SDL instance ids differ between processes, so pads are identified by device path, falling
-     * back to GUID plus the pad's position among pads with the same GUID.
+     * SDL instance ids differ between processes, so pads need a key every instance agrees on.
+     * A serial number (a DualSense reports its Bluetooth address) is best: it stays the same
+     * over USB and Bluetooth, so a player keeps their controller when they plug it in. Pads
+     * without one fall back to device path, then GUID plus position among pads with that GUID.
      */
-    private static String stableKey(int id, Map<String, Integer> guidCounts) {
-        String path = SDL_GetGamepadPathForID(id);
-        String guid = guidString(id);
-        int ordinal = guidCounts.merge(guid, 1, Integer::sum) - 1;
+    static String stableKey(String serial, String path, String guid, int ordinal, Set<String> inUse) {
+        String normalised = serial == null ? "" : serial.toLowerCase(Locale.ROOT).replaceAll("[^0-9a-f]", "");
+        // Cheap pads sometimes report a blank or shared serial; never let two pads share a key.
+        if (!normalised.isEmpty() && !normalised.chars().allMatch(c -> c == '0') && !inUse.contains("serial:" + normalised)) {
+            return "serial:" + normalised;
+        }
         if (path != null && !path.isBlank()) {
             return "path:" + path;
         }
