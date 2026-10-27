@@ -1,6 +1,6 @@
 # Couch Co-op
 
-![Two players in splitscreen: HaplessGnome on top and Groobby below, each in their own half of the screen](docs/splitscreen.jpg)
+![Two players in splitscreen above an autumn valley: one player looks at the other on top, the second player's own view below](docs/splitscreen.jpg)
 
 Local splitscreen for Minecraft Java **26.3** on **Fabric**, **Forge** and **NeoForge**, built around PlayStation 5 (DualSense) controllers, with Xbox One/Series pads supported too. Guests get saved profiles with their own names and skins.
 
