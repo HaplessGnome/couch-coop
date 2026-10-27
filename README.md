@@ -1,10 +1,12 @@
 # Couch Co-op
 
-![Two players in splitscreen above an autumn valley: one player looks at the other on top, the second player's own view below](docs/splitscreen.jpg)
+![Two players exploring a snowy autumn valley in splitscreen, one in each half of the screen](docs/splitscreen.gif)
 
 Local splitscreen for Minecraft Java **26.3** on **Fabric**, **Forge** and **NeoForge**, built around PlayStation 5 (DualSense) controllers, with Xbox One/Series pads supported too. Guests get saved profiles with their own names and skins.
 
 ## How it works
+
+![Two players in splitscreen above an autumn valley: one player looks at the other on top, the second player's own view below](docs/splitscreen.jpg)
 
 Each player gets their own game window. The mod tiles the windows across the whole primary monitor, like one fullscreen game, and gives each window its own controller. Guest windows join the host's world over LAN. This is the same approach console-style splitscreen mods take on Java Edition, which has no built-in support for several local players.
 
