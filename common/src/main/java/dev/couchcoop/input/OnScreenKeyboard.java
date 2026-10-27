@@ -5,6 +5,7 @@ import dev.couchcoop.CouchCoop;
 import dev.couchcoop.config.CouchCoopConfig.Action;
 import dev.couchcoop.input.KeyboardLayout.Cursor;
 import dev.couchcoop.input.KeyboardLayout.Key;
+import dev.couchcoop.mixin.RecipeBookComponentAccessor;
 import dev.couchcoop.profile.ProfileScreen;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
@@ -15,6 +16,7 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
 import net.minecraft.client.gui.screens.inventory.BookEditScreen;
+import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 
@@ -232,6 +234,13 @@ public final class OnScreenKeyboard {
         GuiEventListener focused = parent.getFocused();
         while (focused instanceof ContainerEventHandler nested && nested.getFocused() != null) {
             focused = nested.getFocused();
+        }
+        // The recipe book doesn't pass focus on to its search box; look inside it.
+        if (focused instanceof RecipeBookComponent<?> book) {
+            EditBox search = ((RecipeBookComponentAccessor) book).couchcoop$getSearchBox();
+            if (search != null && search.isFocused()) {
+                return search;
+            }
         }
         return focused;
     }
