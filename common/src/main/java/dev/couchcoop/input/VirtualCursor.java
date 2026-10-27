@@ -5,6 +5,10 @@ import dev.couchcoop.CouchCoop;
 import dev.couchcoop.config.CouchCoopConfig;
 import dev.couchcoop.config.CouchCoopConfig.Action;
 import dev.couchcoop.mixin.AbstractContainerScreenAccessor;
+import dev.couchcoop.mixin.AbstractRecipeBookScreenAccessor;
+import dev.couchcoop.mixin.OverlayRecipeComponentAccessor;
+import dev.couchcoop.mixin.RecipeBookComponentAccessor;
+import dev.couchcoop.mixin.RecipeBookPageAccessor;
 import dev.couchcoop.profile.ProfileScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -13,6 +17,9 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractRecipeBookScreen;
+import net.minecraft.client.gui.screens.recipebook.OverlayRecipeComponent;
+import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.input.MouseButtonInfo;
@@ -176,6 +183,20 @@ public final class VirtualCursor {
 
     private static List<Navigation.Target> targets(AbstractContainerScreen<?> container) {
         List<Navigation.Target> targets = new ArrayList<>();
+        RecipeBookComponent<?> book = container instanceof AbstractRecipeBookScreen<?> recipeScreen
+            ? ((AbstractRecipeBookScreenAccessor) recipeScreen).couchcoop$getRecipeBook() : null;
+        if (book != null && book.isVisible()) {
+            RecipeBookPageAccessor page = (RecipeBookPageAccessor) ((RecipeBookComponentAccessor) book).couchcoop$getPage();
+            OverlayRecipeComponent overlay = page.couchcoop$getOverlay();
+            if (overlay.isVisible()) {
+                // A recipe's variant pop-up is modal: move between its options only.
+                for (AbstractWidget button : ((OverlayRecipeComponentAccessor) overlay).couchcoop$getButtons()) {
+                    addWidget(button, targets);
+                }
+                return targets;
+            }
+            addRecipeBook((RecipeBookComponentAccessor) book, page, targets);
+        }
         AbstractContainerScreenAccessor accessor = (AbstractContainerScreenAccessor) container;
         int left = accessor.couchcoop$getLeftPos();
         int top = accessor.couchcoop$getTopPos();
@@ -189,12 +210,30 @@ public final class VirtualCursor {
         return targets;
     }
 
+    /** The recipe book's widgets live inside it rather than on the screen, so they're added by hand. */
+    private static void addRecipeBook(RecipeBookComponentAccessor book, RecipeBookPageAccessor page, List<Navigation.Target> targets) {
+        for (AbstractWidget tab : book.couchcoop$getTabButtons()) {
+            addWidget(tab, targets);
+        }
+        addWidget(book.couchcoop$getFilterButton(), targets);
+        addWidget(book.couchcoop$getSearchBox(), targets);
+        for (AbstractWidget recipe : page.couchcoop$getButtons()) {
+            addWidget(recipe, targets);
+        }
+        addWidget(page.couchcoop$getForwardButton(), targets);
+        addWidget(page.couchcoop$getBackButton(), targets);
+    }
+
+    private static void addWidget(AbstractWidget widget, List<Navigation.Target> targets) {
+        if (widget != null && widget.visible && widget.active) {
+            targets.add(new Navigation.Target(widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
+        }
+    }
+
     private static void addWidgets(ContainerEventHandler parent, List<Navigation.Target> targets) {
         for (GuiEventListener child : parent.children()) {
             if (child instanceof AbstractWidget widget) {
-                if (widget.visible && widget.active) {
-                    targets.add(new Navigation.Target(widget.getX(), widget.getY(), widget.getWidth(), widget.getHeight()));
-                }
+                addWidget(widget, targets);
             } else if (child instanceof ContainerEventHandler nested) {
                 addWidgets(nested, targets);
             }

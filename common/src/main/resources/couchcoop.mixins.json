@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "AbstractContainerScreenAccessor",
+    "AbstractRecipeBookScreenAccessor",
     "FramerateLimitTrackerMixin",
     "GuiMixin",
     "KeyMappingAccessor",
@@ -13,7 +14,10 @@
     "MouseHandlerMixin",
     "MultiPlayerGameModeMixin",
     "OptionsMixin",
-    "PlayerInfoMixin"
+    "OverlayRecipeComponentAccessor",
+    "PlayerInfoMixin",
+    "RecipeBookComponentAccessor",
+    "RecipeBookPageAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
