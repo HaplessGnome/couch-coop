@@ -592,6 +592,12 @@ public final class CouchCoopClient {
     }
 
     private void tick(Minecraft minecraft) {
+        long exitAfter = Long.getLong(CouchCoop.MOD_ID + ".exitAfterSeconds", 0);
+        if (exitAfter > 0 && ticks == exitAfter * 20) {
+            // Automated load checks: quit once the mod has started, so test windows never pile up.
+            CouchCoop.LOGGER.info("Smoke test finished; closing");
+            minecraft.stop();
+        }
         if (ticks++ % SYNC_INTERVAL_TICKS == 0) {
             sync(minecraft);
         }

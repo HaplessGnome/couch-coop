@@ -13,6 +13,10 @@ loom {
         client {
             client()
             runDir 'run'
+            // ./gradlew :fabric:runClient -PsmokeTest starts the game, loads the mod and quits by itself.
+            if (project.hasProperty('smokeTest')) {
+                vmArg '-Dcouchcoop.exitAfterSeconds=10'
+            }
         }
     }
 }
