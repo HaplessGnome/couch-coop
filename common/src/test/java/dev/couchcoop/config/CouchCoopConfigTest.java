@@ -21,6 +21,32 @@ class CouchCoopConfigTest {
     }
 
     @Test
+    void triangleMovesStacksAndSquareSplitsThem() {
+        CouchCoopConfig config = CouchCoopConfig.defaults();
+        assertEquals(GamepadInput.TRIANGLE, config.binding(Action.MENU_QUICK_MOVE));
+        assertEquals(GamepadInput.SQUARE, config.binding(Action.MENU_RIGHT_CLICK));
+    }
+
+    @Test
+    void oldMenuButtonsAreSwapped() {
+        CouchCoopConfig config = CouchCoopConfig.defaults();
+        config.bindings.put(Action.MENU_QUICK_MOVE, GamepadInput.SQUARE);
+        config.bindings.put(Action.MENU_RIGHT_CLICK, GamepadInput.TRIANGLE);
+        CouchCoopConfig.migrate(config, 2);
+        assertEquals(GamepadInput.TRIANGLE, config.binding(Action.MENU_QUICK_MOVE));
+        assertEquals(GamepadInput.SQUARE, config.binding(Action.MENU_RIGHT_CLICK));
+    }
+
+    @Test
+    void customMenuButtonsAreKept() {
+        CouchCoopConfig config = CouchCoopConfig.defaults();
+        config.bindings.put(Action.MENU_QUICK_MOVE, GamepadInput.SQUARE);
+        config.bindings.put(Action.MENU_RIGHT_CLICK, GamepadInput.R1);
+        CouchCoopConfig.migrate(config, 2);
+        assertEquals(GamepadInput.SQUARE, config.binding(Action.MENU_QUICK_MOVE));
+    }
+
+    @Test
     void deliberateChoicesSurviveMigration() {
         CouchCoopConfig config = CouchCoopConfig.defaults();
         config.bindings.put(Action.SNEAK, GamepadInput.L3);

@@ -51,8 +51,8 @@ public final class CouchCoopConfig {
         PAUSE(GamepadInput.OPTIONS),
         MENU_CLICK(GamepadInput.CROSS),
         MENU_BACK(GamepadInput.CIRCLE),
-        MENU_QUICK_MOVE(GamepadInput.SQUARE),
-        MENU_RIGHT_CLICK(GamepadInput.TRIANGLE);
+        MENU_QUICK_MOVE(GamepadInput.TRIANGLE),
+        MENU_RIGHT_CLICK(GamepadInput.SQUARE);
 
         public final GamepadInput defaultInput;
 
@@ -78,7 +78,7 @@ public final class CouchCoopConfig {
      * Every option is written back to the file, so a changed default never reaches existing
      * installs on its own. Bump this and migrate in {@link #migrate} when a default changes.
      */
-    static final int VERSION = 2;
+    static final int VERSION = 3;
 
     public Layout layout = Layout.TOP_BOTTOM;
     public boolean coverTaskbar = true;
@@ -165,6 +165,12 @@ public final class CouchCoopConfig {
         if (fromVersion < 2 && config.bindings.get(Action.SNEAK) == GamepadInput.CIRCLE) {
             // 1.1.0: crouch moved from Circle to R3.
             config.bindings.put(Action.SNEAK, GamepadInput.R3);
+        }
+        if (fromVersion < 3 && config.bindings.get(Action.MENU_QUICK_MOVE) == GamepadInput.SQUARE
+            && config.bindings.get(Action.MENU_RIGHT_CLICK) == GamepadInput.TRIANGLE) {
+            // 1.1.0: Triangle moves stacks (shift-click), Square splits them (right-click).
+            config.bindings.put(Action.MENU_QUICK_MOVE, GamepadInput.TRIANGLE);
+            config.bindings.put(Action.MENU_RIGHT_CLICK, GamepadInput.SQUARE);
         }
     }
 

@@ -46,8 +46,8 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 | Move / look | Left / right stick | Move cursor | Left stick |
 | Jump | Cross | Click | Cross |
 | Sneak | R3 (press the right stick) | Back / close | Circle or Options |
-| Swap hands | Square ¹ | Shift-click (quick move) | Square |
-| Inventory | Triangle | Right-click (split stack) | Triangle |
+| Swap hands | Square ¹ | Shift-click (move stack across) | Triangle |
+| Inventory | Triangle | Right-click (split stack) | Square |
 | Attack / mine | R2 | Scroll | Right stick |
 | Use / place | L2 | Jump between slots and buttons | D-pad |
 | Hotbar left / right | L1 / R1 | | |
