@@ -1,7 +1,6 @@
 package dev.couchcoop;
 
 import dev.couchcoop.config.CouchCoopConfig;
-import dev.couchcoop.craft.QuickCraft;
 import dev.couchcoop.input.ControllerInput;
 import dev.couchcoop.input.Gamepad;
 import dev.couchcoop.input.GamepadInput;
@@ -64,7 +63,6 @@ public final class CouchCoopClient {
     // field it is known before the first frame-limit check during startup.
     private final SessionCoordinator session = new SessionCoordinator(CouchCoop.platform().configDir().toAbsolutePath().getParent());
     private final WindowLayout layout = new WindowLayout();
-    private final QuickCraft quickCraft = new QuickCraft();
     private final Haptics haptics = new Haptics();
 
     private Gamepad pad;
@@ -141,10 +139,6 @@ public final class CouchCoopClient {
         return null;
     }
 
-    public QuickCraft quickCraft() {
-        return quickCraft;
-    }
-
     /** This window's controller, or null when it is played on keyboard and mouse. */
     public Gamepad pad() {
         return pad;
@@ -194,8 +188,6 @@ public final class CouchCoopClient {
         if (driver != null) {
             input.frame(minecraft, driver, delta);
         }
-        // Typing in the recipe search box uses the same shoulder buttons, so the keyboard wins.
-        quickCraft.frame(minecraft, pad != null && !input.keyboard().isVisible() ? pad : null);
     }
 
     private void resolvePad() {

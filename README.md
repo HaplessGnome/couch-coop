@@ -63,7 +63,7 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 ¹ Consoles open crafting here; Java's inventory already contains the crafting grid.
 ² Consoles emote here; Java has no emotes.
 
-Circle (in game), the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, `splitFrameLimit` (FPS cap per window while split, default 60), `guestMemoryMb` (memory per guest window, default 3072), guest audio, `quickCraft`, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
+Circle (in game), the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, `splitFrameLimit` (FPS cap per window while split, default 60), `guestMemoryMb` (memory per guest window, default 3072), guest audio, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
 
 ### On-screen keyboard
 
@@ -78,10 +78,6 @@ Whenever a text box has focus (chat, signs, books, anvils, search boxes, profile
 | R3 or the Tab key | Tab: completes commands and player names in chat |
 | Options | Enter (send chat, confirm) |
 | Circle | Hide the keyboard (press Cross on the text box to bring it back) |
-
-### Quick craft
-
-Beside the inventory and the crafting table, a list shows everything you can craft right now from what you carry. L1/R1 pick a recipe, R2 crafts one and L2 crafts as many as possible; with a mouse, click a row (shift-click for all). It uses the same request as the recipe book, so it works on any server. It does not appear in the creative inventory, which has no crafting grid.
 
 ### Rumble and adaptive triggers
 

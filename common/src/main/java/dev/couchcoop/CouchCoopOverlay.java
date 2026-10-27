@@ -1,8 +1,6 @@
 package dev.couchcoop;
 
-import dev.couchcoop.craft.QuickCraft;
 import dev.couchcoop.input.Gamepad;
-import dev.couchcoop.input.GamepadInput;
 import dev.couchcoop.input.KeyboardLayout;
 import dev.couchcoop.input.OnScreenKeyboard;
 import dev.couchcoop.input.VirtualCursor;
@@ -52,9 +50,6 @@ public final class CouchCoopOverlay {
             picker(graphics, font, client.picker());
         }
 
-        if (client.quickCraft().isActive()) {
-            quickCraft(graphics, font, client.quickCraft(), minecraft, client.pad());
-        }
         if (CouchCoopClient.isKeyboardActive()) {
             keyboard(graphics, font, client.input().keyboard(), client.menuPad());
         } else if (CouchCoopClient.isCursorActive()) {
@@ -98,42 +93,6 @@ public final class CouchCoopOverlay {
             y += row;
         }
         graphics.text(font, help, (graphics.guiWidth() - font.width(help)) / 2, y + 2, MUTED);
-    }
-
-    /** The quick craft list: result icons and names, the selected row highlighted for controllers. */
-    private static void quickCraft(GuiGraphicsExtractor graphics, Font font, QuickCraft panel, Minecraft minecraft, Gamepad pad) {
-        QuickCraft.Layout layout = panel.layout();
-        List<QuickCraft.Entry> entries = panel.entries();
-        int shown = Math.min(layout.rows(), entries.size());
-        int bottom = layout.top() + layout.firstRow() + Math.max(shown, 1) * layout.rowHeight() + 2;
-        graphics.fill(layout.left(), layout.top(), layout.left() + layout.width(), bottom, PANEL);
-        String title = pad == null ? "Quick craft" : "Quick craft  " + pad.label(GamepadInput.L1) + "/" + pad.label(GamepadInput.R1);
-        graphics.text(font, title, layout.left() + 4, layout.top() + 2, MUTED);
-        if (entries.isEmpty()) {
-            graphics.text(font, "Nothing to craft", layout.left() + 4, layout.top() + layout.firstRow() + 4, MUTED);
-            return;
-        }
-
-        double mouseX = minecraft.mouseHandler.getScaledXPos(minecraft.getWindow());
-        double mouseY = minecraft.mouseHandler.getScaledYPos(minecraft.getWindow());
-        int hovered = panel.rowAt(mouseX, mouseY);
-        int scroll = panel.scroll();
-        for (int i = 0; i < shown; i++) {
-            int index = scroll + i;
-            QuickCraft.Entry entry = entries.get(index);
-            int y = layout.top() + layout.firstRow() + i * layout.rowHeight();
-            if ((pad != null && index == panel.selected()) || index == hovered) {
-                graphics.fill(layout.left() + 1, y, layout.left() + layout.width() - 1, y + layout.rowHeight(), HIGHLIGHT);
-            }
-            graphics.item(entry.result(), layout.left() + 2, y + 1);
-            graphics.itemDecorations(font, entry.result(), layout.left() + 2, y + 1);
-            String name = font.plainSubstrByWidth(entry.result().getHoverName().getString(), layout.width() - 24);
-            graphics.text(font, name, layout.left() + 21, y + 5, TEXT);
-        }
-        if (pad != null) {
-            String help = pad.label(GamepadInput.R2) + " craft  " + pad.label(GamepadInput.L2) + " all";
-            graphics.text(font, help, layout.left() + 4, bottom + 2, MUTED);
-        }
     }
 
     /** The on-screen keyboard, at the bottom of the screen or the top if the text box is low down. */

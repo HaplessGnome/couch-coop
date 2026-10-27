@@ -92,7 +92,6 @@ public final class CouchCoopConfig {
     public boolean invertLookY = false;
     public boolean childInstanceAudio = false;
     public boolean controllerLights = true;
-    public boolean quickCraft = true;
     public boolean rumble = true;
     public double rumbleStrength = 1.0;
     public boolean adaptiveTriggers = true;
@@ -149,7 +148,6 @@ public final class CouchCoopConfig {
         config.invertLookY = Boolean.parseBoolean(props.getProperty("invertLookY", Boolean.toString(config.invertLookY)));
         config.childInstanceAudio = Boolean.parseBoolean(props.getProperty("childInstanceAudio", Boolean.toString(config.childInstanceAudio)));
         config.controllerLights = Boolean.parseBoolean(props.getProperty("controllerLights", Boolean.toString(config.controllerLights)));
-        config.quickCraft = Boolean.parseBoolean(props.getProperty("quickCraft", Boolean.toString(config.quickCraft)));
         config.rumble = Boolean.parseBoolean(props.getProperty("rumble", Boolean.toString(config.rumble)));
         config.rumbleStrength = Math.clamp(parseDouble(props.getProperty("rumbleStrength"), config.rumbleStrength), 0.0, 1.0);
         config.adaptiveTriggers = Boolean.parseBoolean(props.getProperty("adaptiveTriggers", Boolean.toString(config.adaptiveTriggers)));
@@ -182,7 +180,6 @@ public final class CouchCoopConfig {
             # coverTaskbar: true tiles over the whole monitor like one fullscreen game; false leaves the taskbar visible
             # splitFrameLimit: max FPS per window while the screen is split, so windows share the GPU evenly (0 = off)
             # guestMemoryMb: most memory each guest window may use, never more than window 1's (0 = same as window 1)
-            # quickCraft: list craftable items beside the inventory and crafting table (L1/R1 pick, R2 craft, L2 craft all)
             # rumble: vibrate when hurt or breaking blocks (rumbleStrength 0-1)
             # adaptiveTriggers: DualSense L2 stiffens while drawing a bow, crossbow or trident
             # bind.*: CROSS CIRCLE SQUARE TRIANGLE L1 R1 L2 R2 L3 R3 CREATE OPTIONS PS TOUCHPAD MUTE
@@ -204,7 +201,6 @@ public final class CouchCoopConfig {
         line(out, "invertLookY", invertLookY);
         line(out, "childInstanceAudio", childInstanceAudio);
         line(out, "controllerLights", controllerLights);
-        line(out, "quickCraft", quickCraft);
         line(out, "rumble", rumble);
         line(out, "rumbleStrength", rumbleStrength);
         line(out, "adaptiveTriggers", adaptiveTriggers);
