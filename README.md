@@ -29,6 +29,8 @@ Each player gets their own game window. The mod tiles the windows across the who
 
 Singleplayer worlds are opened to LAN automatically, with authentication off, so that offline guest profiles can connect.
 
+![Both players taking in the view over a snowy valley with red autumn trees, one in each half of the screen](docs/exploring.gif)
+
 ## Guest profiles and skins
 
 Profiles are saved in `config/couchcoop/profiles.json`. A profile's name is its offline account name, so each profile keeps its own inventory, position and stats in every world.
