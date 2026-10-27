@@ -42,7 +42,8 @@ import static org.lwjgl.sdl.SDLVideo.SDL_SetWindowFocusable;
 public final class CouchCoopClient {
     private static final long JOIN_HOLD_MS = 1000;
     private static final long SPAWN_TIMEOUT_MS = 120_000;
-    private static final long WANTED_PAD_TIMEOUT_MS = 30_000;
+    /** How long a new guest waits for its controller, counted from when it can first see controllers. */
+    private static final long WANTED_PAD_TIMEOUT_MS = 60_000;
     private static final long PAD_GRACE_MS = 30_000;
     private static final long CHILD_EXIT_DELAY_MS = 5_000;
     private static final int SYNC_INTERVAL_TICKS = 20;
@@ -65,13 +66,15 @@ public final class CouchCoopClient {
     private final WindowLayout layout = new WindowLayout();
     private final QuickCraft quickCraft = new QuickCraft();
     private final Haptics haptics = new Haptics();
-    private final long startedAt = System.currentTimeMillis();
 
     private Gamepad pad;
     /** The joining controller, while its player fills in the profile form in this window. */
     private Gamepad formPad;
     private boolean hadPad;
     private long padMissingSince;
+    /** Serial of this window's pad while it's missing, to recognise it coming back on a new path. */
+    private String missingPadSerial;
+    private long wantedPadWaitStart;
     private String wantedPadKey = System.getProperty(CouchCoop.PROP_PAD);
     private int shownPlayerIndex = -1;
     private Boolean focusable;
@@ -218,26 +221,52 @@ public final class CouchCoopClient {
 
         // Pad unplugged or out of battery: keep the claim for a while in case it comes back.
         if (pad != null) {
+            missingPadSerial = pad.serial();
             input.reset();
             pad = null;
             padMissingSince = System.currentTimeMillis();
             showMessage("Controller disconnected");
-        } else if (padMissingSince > 0 && System.currentTimeMillis() - padMissingSince > PAD_GRACE_MS) {
+            return;
+        }
+        // Switching between USB and Bluetooth gives the pad a new path; its serial stays the same.
+        Gamepad back = gamepads.findBySerial(missingPadSerial, null);
+        if (back != null && session.isPadFree(back.key()) && session.tryClaimPad(back.key())) {
+            missingPadSerial = null;
+            padMissingSince = 0;
+            onPadClaimed();
+            return;
+        }
+        if (padMissingSince > 0 && System.currentTimeMillis() - padMissingSince > PAD_GRACE_MS) {
             session.releasePad();
             padMissingSince = 0;
+            missingPadSerial = null;
         }
     }
 
-    /** A freshly launched guest claims the controller whose START press spawned it. */
+    /**
+     * A freshly launched guest claims the controller whose Options hold spawned it. Heavy
+     * modpacks can take most of a minute before a guest sees any controller, so the wait starts
+     * then, and the pad is looked for before the clock is checked.
+     */
     private void claimWantedPad() {
         if (wantedPadKey == null) {
             return;
         }
-        if (System.currentTimeMillis() - startedAt > WANTED_PAD_TIMEOUT_MS) {
-            CouchCoop.LOGGER.warn("Controller {} never appeared; press A on any free controller to play", wantedPadKey);
+        if (gamepads.find(wantedPadKey) != null) {
+            if (session.tryClaimPad(wantedPadKey)) {
+                onPadClaimed();
+            }
             wantedPadKey = null;
-        } else if (gamepads.find(wantedPadKey) != null && session.tryClaimPad(wantedPadKey)) {
-            onPadClaimed();
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (gamepads.pads().isEmpty() && wantedPadWaitStart == 0) {
+            return;
+        }
+        if (wantedPadWaitStart == 0) {
+            wantedPadWaitStart = now;
+        } else if (now - wantedPadWaitStart > WANTED_PAD_TIMEOUT_MS) {
+            CouchCoop.LOGGER.warn("Controller {} never appeared; press Cross on any free controller to play", wantedPadKey);
             wantedPadKey = null;
         }
     }

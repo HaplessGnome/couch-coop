@@ -14,6 +14,7 @@ public final class Gamepad {
     final int instanceId;
     final long handle;
     private final String key;
+    private final String serial;
     private final String name;
     private final int type;
 
@@ -24,10 +25,11 @@ public final class Gamepad {
     private TriggerEffect leftTrigger;
     private TriggerEffect rightTrigger;
 
-    Gamepad(int instanceId, long handle, String key) {
+    Gamepad(int instanceId, long handle, String key, String serial) {
         this.instanceId = instanceId;
         this.handle = handle;
         this.key = key;
+        this.serial = serial;
         String sdlName = SDL_GetGamepadName(handle);
         this.name = sdlName == null ? "Controller" : sdlName;
         this.type = SDL_GetGamepadType(handle);
@@ -57,6 +59,11 @@ public final class Gamepad {
     }
 
     /** Stable across processes, so several game instances agree on which pad is which. */
+    /** The pad's own serial number if it's trustworthy, else null; see {@link GamepadManager#usableSerial}. */
+    public String serial() {
+        return serial;
+    }
+
     public String key() {
         return key;
     }

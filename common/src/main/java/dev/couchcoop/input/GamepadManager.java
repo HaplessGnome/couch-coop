@@ -10,12 +10,10 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import static org.lwjgl.sdl.SDLError.SDL_GetError;
 import static org.lwjgl.sdl.SDLGamepad.*;
@@ -115,33 +113,48 @@ public final class GamepadManager {
                 CouchCoop.LOGGER.warn("Could not open controller {}: {}", id, SDL_GetError());
                 continue;
             }
-            Set<String> inUse = new HashSet<>();
-            for (Gamepad open : pads.values()) {
-                inUse.add(open.key());
-            }
-            String key = stableKey(SDL_GetGamepadSerial(handle), path, guid, ordinal, inUse);
-            Gamepad pad = new Gamepad(id, handle, key);
+            String key = stableKey(path, guid, ordinal);
+            String serial = usableSerial(SDL_GetGamepadSerial(handle));
+            Gamepad pad = new Gamepad(id, handle, key, serial);
             pads.put(id, pad);
             CouchCoop.LOGGER.info("Controller connected: {} ({})", pad.name(), key);
         }
     }
 
     /**
-     * SDL instance ids differ between processes, so pads need a key every instance agrees on.
-     * A serial number (a DualSense reports its Bluetooth address) is best: it stays the same
-     * over USB and Bluetooth, so a player keeps their controller when they plug it in. Pads
-     * without one fall back to device path, then GUID plus position among pads with that GUID.
+     * SDL instance ids differ between processes, so pads need a key every game window agrees on:
+     * the OS device path, else the GUID plus the pad's position among pads with that GUID.
+     * Serial numbers can't be the key: remapping tools present virtual pads whose serials read
+     * back differently in each process (one window saw "10", another "0200f6607920").
      */
-    static String stableKey(String serial, String path, String guid, int ordinal, Set<String> inUse) {
-        String normalised = serial == null ? "" : serial.toLowerCase(Locale.ROOT).replaceAll("[^0-9a-f]", "");
-        // Cheap pads sometimes report a blank or shared serial; never let two pads share a key.
-        if (!normalised.isEmpty() && !normalised.chars().allMatch(c -> c == '0') && !inUse.contains("serial:" + normalised)) {
-            return "serial:" + normalised;
-        }
+    static String stableKey(String path, String guid, int ordinal) {
         if (path != null && !path.isBlank()) {
             return "path:" + path;
         }
         return "guid:" + guid + "#" + ordinal;
+    }
+
+    /**
+     * A serial worth trusting to recognise the same pad after it switches between USB and
+     * Bluetooth, which changes its path: a DualSense reports its 12-digit Bluetooth address.
+     * Anything else (blank, zeros, or junk like "10") is ignored.
+     */
+    static String usableSerial(String serial) {
+        String normalised = serial == null ? "" : serial.toLowerCase(Locale.ROOT).replaceAll("[^0-9a-f]", "");
+        return normalised.length() == 12 && !normalised.chars().allMatch(c -> c == '0') ? normalised : null;
+    }
+
+    /** An open pad with this serial that isn't {@code except}, or null. */
+    public Gamepad findBySerial(String serial, Gamepad except) {
+        if (serial == null) {
+            return null;
+        }
+        for (Gamepad pad : pads.values()) {
+            if (pad != except && serial.equals(pad.serial())) {
+                return pad;
+            }
+        }
+        return null;
     }
 
     private static String guidString(int id) {

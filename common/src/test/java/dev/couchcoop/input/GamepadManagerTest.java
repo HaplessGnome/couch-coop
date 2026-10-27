@@ -2,37 +2,35 @@ package dev.couchcoop.input;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class GamepadManagerTest {
-    private static final String USB_PATH = "HID#VID_054C&PID_0CE6&MI_03#7&2b491f3b";
-    private static final String BT_PATH = "HID#{00001124-0000-1000-8000-00805f9b34fb}_VID&0002054c";
+    private static final String PATH = "HID#VID_054C&PID_0CE6&REV_8111#2&960061B&0&0000";
 
     @Test
-    void serialWinsOverPathSoUsbAndBluetoothMatch() {
-        String usb = GamepadManager.stableKey("0C:27:56:5D:97:14", USB_PATH, "guid", 0, Set.of());
-        String bluetooth = GamepadManager.stableKey("0c-27-56-5d-97-14", BT_PATH, "guid", 0, Set.of());
-        assertEquals("serial:0c27565d9714", usb);
-        assertEquals(usb, bluetooth);
+    void keyIsTheDevicePathSoEveryWindowAgrees() {
+        assertEquals("path:" + PATH, GamepadManager.stableKey(PATH, "guid", 0));
     }
 
     @Test
-    void blankOrZeroSerialFallsBackToPath() {
-        assertEquals("path:" + USB_PATH, GamepadManager.stableKey(null, USB_PATH, "guid", 0, Set.of()));
-        assertEquals("path:" + USB_PATH, GamepadManager.stableKey("", USB_PATH, "guid", 0, Set.of()));
-        assertEquals("path:" + USB_PATH, GamepadManager.stableKey("00:00:00:00:00:00", USB_PATH, "guid", 0, Set.of()));
+    void noPathUsesGuidAndPosition() {
+        assertEquals("guid:abc#1", GamepadManager.stableKey(" ", "abc", 1));
+        assertEquals("guid:abc#0", GamepadManager.stableKey(null, "abc", 0));
     }
 
     @Test
-    void duplicateSerialFallsBackToPath() {
-        Set<String> inUse = Set.of("serial:123456");
-        assertEquals("path:" + BT_PATH, GamepadManager.stableKey("123456", BT_PATH, "guid", 1, inUse));
+    void bluetoothAddressSerialsAreUsableInAnyFormat() {
+        assertEquals("0c27565d9714", GamepadManager.usableSerial("0C:27:56:5D:97:14"));
+        assertEquals("0c27565d9714", GamepadManager.usableSerial("0c-27-56-5d-97-14"));
     }
 
     @Test
-    void noSerialOrPathUsesGuidAndPosition() {
-        assertEquals("guid:abc#1", GamepadManager.stableKey(null, " ", "abc", 1, Set.of()));
+    void junkSerialsAreIgnored() {
+        // A virtual pad created by game streaming (Sunshine) read back as "10" in one window.
+        assertNull(GamepadManager.usableSerial("10"));
+        assertNull(GamepadManager.usableSerial(""));
+        assertNull(GamepadManager.usableSerial(null));
+        assertNull(GamepadManager.usableSerial("00:00:00:00:00:00"));
     }
 }
