@@ -45,7 +45,7 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 |---|---|---|---|
 | Move / look | Left / right stick | Move cursor | Left stick |
 | Jump | Cross | Click | Cross |
-| Sneak | Circle | Back / close | Circle or Options |
+| Sneak | R3 (press the right stick) | Back / close | Circle or Options |
 | Swap hands | Square ¹ | Shift-click (quick move) | Square |
 | Inventory | Triangle | Right-click (split stack) | Triangle |
 | Attack / mine | R2 | Scroll | Right stick |
@@ -63,7 +63,7 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 ¹ Consoles open crafting here; Java's inventory already contains the crafting grid.
 ² Consoles emote here; Java has no emotes.
 
-R3, the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, `splitFrameLimit` (FPS cap per window while split, default 60), `guestMemoryMb` (memory per guest window, default 3072), guest audio, `quickCraft`, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
+Circle (in game), the PS button and the mute button are free and can be bound. All bindings (PlayStation or Xbox names), look sensitivity, deadzone, Y inversion, layout (`TOP_BOTTOM` or `SIDE_BY_SIDE`), `coverTaskbar`, `splitFrameLimit` (FPS cap per window while split, default 60), `guestMemoryMb` (memory per guest window, default 3072), guest audio, `quickCraft`, `rumble`, `rumbleStrength` and `adaptiveTriggers` are in `config/couchcoop.properties`.
 
 ### On-screen keyboard
 

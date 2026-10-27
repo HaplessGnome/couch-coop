@@ -32,7 +32,7 @@ public final class CouchCoopConfig {
      */
     public enum Action {
         JUMP(GamepadInput.CROSS),
-        SNEAK(GamepadInput.CIRCLE),
+        SNEAK(GamepadInput.R3),
         // Consoles open crafting here; Java's inventory already holds the crafting grid.
         SWAP_HANDS(GamepadInput.SQUARE),
         INVENTORY(GamepadInput.TRIANGLE),
