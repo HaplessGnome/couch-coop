@@ -74,6 +74,12 @@ public final class CouchCoopConfig {
         }
     }
 
+    /**
+     * Every option is written back to the file, so a changed default never reaches existing
+     * installs on its own. Bump this and migrate in {@link #migrate} when a default changes.
+     */
+    static final int VERSION = 2;
+
     public Layout layout = Layout.TOP_BOTTOM;
     public boolean coverTaskbar = true;
     public int splitFrameLimit = 60;
@@ -150,9 +156,23 @@ public final class CouchCoopConfig {
         for (Action action : Action.values()) {
             config.bindings.put(action, GamepadInput.parse(props.getProperty(action.key()), action.defaultInput));
         }
+        migrate(config, parseInt(props.getProperty("configVersion"), 1));
 
         config.save(file);
         return config;
+    }
+
+    /** Moves settings still on an old default to the new one; deliberate choices are left alone. */
+    static void migrate(CouchCoopConfig config, int fromVersion) {
+        if (fromVersion < 2 && config.bindings.get(Action.SNEAK) == GamepadInput.CIRCLE) {
+            // 1.1.0: crouch moved from Circle to R3.
+            config.bindings.put(Action.SNEAK, GamepadInput.R3);
+        }
+    }
+
+    /** Defaults only, as if no file existed. */
+    static CouchCoopConfig defaults() {
+        return new CouchCoopConfig();
     }
 
     private void save(Path file) {
@@ -171,6 +191,7 @@ public final class CouchCoopConfig {
             # L2=LT R2=RT L3=LS R3=RS CREATE=View OPTIONS=Menu PS=Guide MUTE=Share. Xbox names work here too.
             # Guest profiles can override lookSensitivity, invertLookY and bind.* in couchcoop/profiles.json.
             """);
+        line(out, "configVersion", VERSION);
         line(out, "layout", layout.name());
         line(out, "coverTaskbar", coverTaskbar);
         line(out, "splitFrameLimit", splitFrameLimit);
