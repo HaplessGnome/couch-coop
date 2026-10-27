@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+
+[[mods]]
+modId="${mod_id}"
+version="${version}"
+displayName="${mod_name}"
+authors="${mod_author}"
+description='''${mod_description}'''
+
+[[mixins]]
+config="${mod_id}.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${minecraft_version},)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="[${minecraft_version},26.4)"
+    ordering="NONE"
+    side="CLIENT"
+
+# Both mods read controllers; running them together makes every button do two things.
+[[dependencies.${mod_id}]]
+    modId="controlify"
+    type="incompatible"
+    reason="Couch Co-op handles controllers itself; remove Controlify."
+    side="CLIENT"

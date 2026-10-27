@@ -1,6 +1,7 @@
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
     id 'net.minecraftforge.gradle' version '[7.0.23,8)' apply false
+    id 'net.neoforged.moddev' version "${moddev_version}" apply false
 }
 
 subprojects {
@@ -35,10 +36,11 @@ configure(subprojects.findAll { it.name != 'common' }) {
         minecraft_version: minecraft_version,
         fabric_loader_min: fabric_loader_min,
         forge_major      : forge_version.tokenize('.')[0],
+        neoforge_version : neoforge_version,
     ]
     tasks.named('processResources', ProcessResources) {
         inputs.properties(expandProps)
-        filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'pack.mcmeta']) {
+        filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
             expand(expandProps)
         }
     }

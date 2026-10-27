@@ -16,4 +16,5 @@ plugins {
 rootProject.name = 'CouchCoop'
 include('fabric')
 include('forge')
+include('neoforge')
 include('common')
