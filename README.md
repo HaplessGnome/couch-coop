@@ -9,7 +9,7 @@ Local splitscreen for Minecraft Java **26.3** on **Fabric**, **Forge** and **Neo
 Each player gets their own game window. The mod tiles the windows across the whole primary monitor, like one fullscreen game, and gives each window its own controller. Guest windows join the host's world over LAN. This is the same approach console-style splitscreen mods take on Java Edition, which has no built-in support for several local players.
 
 - **Controllers** are read through SDL3, which Minecraft 26.x already ships. SDL recognises DualSense and Xbox pads natively, and reads them even when a window is not focused. On DualSense pads the player-number LEDs and light bar show which player you are.
-- **Windows** coordinate through lock files in your temp folder (`%TEMP%\couchcoop`). This works across loaders, so a Fabric window and a Forge window can share one screen.
+- **Windows** coordinate through lock files in your temp folder (`%TEMP%\couchcoop`), one session per game folder, so separate launcher instances running at the same time are never tiled together.
 - **The mouse** belongs to the keyboard player. Windows driven by a controller never capture the cursor.
 
 ## Playing
@@ -49,7 +49,7 @@ Defaults follow Minecraft's console layout on PlayStation. Xbox pads use the but
 | Swap hands | Square ¹ | Shift-click (move stack across) | Triangle |
 | Inventory | Triangle | Right-click (split stack) | Square |
 | Attack / mine | R2 | Scroll | Right stick |
-| Use / place | L2 | Jump between slots and buttons | D-pad |
+| Use / place | L2 | Jump between slots, buttons and the recipe book | D-pad |
 | Hotbar left / right | L1 / R1 | | |
 | Sprint | L3 | | |
 | Change camera | D-pad up | | |
@@ -67,7 +67,7 @@ Circle (in game), the PS button and the mute button are free and can be bound. A
 
 ### On-screen keyboard
 
-Whenever a text box has focus (chat, signs, books, anvils, search boxes, profile names) a keyboard appears. Move with the D-pad or left stick.
+A keyboard appears when you type: straight away in chat, on signs, in books and in the profile form, and elsewhere (anvils, search boxes such as the recipe book's) once you click the text box or move onto it with the D-pad. Move between keys with the D-pad or left stick.
 
 | Button | Does |
 |---|---|
@@ -88,8 +88,9 @@ Controllers rumble when you take damage (harder for bigger hits) and tick when y
 - **Launcher compatibility for auto-launch:** the mod restarts the game using the current process's own command line. That works with the official launcher, Modrinth App, CurseForge and ATLauncher. **Prism Launcher and MultiMC** hide the command line. Fabric still works there through a fallback, but on Forge and NeoForge under Prism you must start the extra windows yourself. Windows started by hand join the session and get tiled anyway; give each one a controller by pressing Cross.
 - **Multiplayer servers:** guests use offline profiles, so joining a remote server only works if that server runs in offline mode. Singleplayer/LAN worlds always work.
 - **Performance:** every player runs a full copy of the game, so 3–4 players needs plenty of RAM and a decent GPU. Guest windows are capped at `guestMemoryMb` (3 GB by default) rather than copying window 1's memory setting.
+- **Playing from another computer:** stream the desktop with Sunshine and Moonlight (or Parsec). Controllers plugged into the other computer arrive as virtual controllers and work like local ones. Steam Remote Play is harder: it may only stream one game window.
 - **One keyboard and mouse:** one player can use keyboard and mouse (window 1) while the others use controllers. Controller windows then ignore the mouse and can't take the keyboard, so a stray click doesn't pull the keyboard player out of their window.
-- **Controlify** reads controllers too, so Fabric refuses to start with both installed. pcal's *Splitscreen Support* also moves windows around and is flagged as a conflict.
+- **Controlify** reads controllers too, so Fabric and NeoForge refuse to start with both installed (Forge doesn't check, but the two would fight over controllers). pcal's *Splitscreen Support* also moves windows around and is flagged as a conflict.
 
 ## Credits
 
@@ -109,12 +110,12 @@ Requires JDK 25.
 ./gradlew build
 ```
 
-Jars are written to `fabric/build/libs/`, `forge/build/libs/` and `neoforge/build/libs/`. `./gradlew :fabric:runClient`, `./gradlew :forge:runClient` and `./gradlew :neoforge:runClient` start dev clients. Running both at once shows the window tiling.
+Jars are written to `fabric/build/libs/`, `forge/build/libs/` and `neoforge/build/libs/`. `./gradlew :fabric:runClient`, `./gradlew :forge:runClient` and `./gradlew :neoforge:runClient` start dev clients; running the same one twice shows the window tiling. Add `-PsmokeTest` to the Fabric one to have it quit by itself ten seconds after loading.
 
 ## Project layout
 
 ```
-common/   shared code and mixins, compiled into both jars (26.x is unobfuscated, so names match).
+common/   shared code and mixins, compiled into all three jars (26.x is unobfuscated, so names match).
           Its own Gradle project only gives IDEs a classpath; its jar is not shipped.
 fabric/   Fabric entry point and fabric.mod.json
 forge/    Forge entry point and mods.toml
